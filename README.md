@@ -2,7 +2,7 @@
 
 A night city on a floating diorama slab, seen through an orthographic camera. Five towers in the
 front row are a dot-matrix clock: lit windows spell the time. A neon blade sign on the last tower
-shows AM/PM in red script inside a green tube frame, and the camera leans toward your pointer and
+shows AM/PM in pink script inside a cyan tube frame, and the camera leans toward your pointer and
 drifts on its own when you leave it alone.
 
 ```
@@ -108,19 +108,27 @@ into white mush. If you raise `AMBIENT_GAIN_MAX` toward 1.0 you will reproduce t
 inboard of that sits inside the building volume and simply does not render. An earlier version
 centred the sign at 11.6 and buried the inner half of every letter. The brackets hide the gap.
 
-**7. The neon red is biased toward magenta (`0xff0048`), not a pure red.** ACES shifts saturated
-bright reds toward orange, so a "correct" red hue renders as orange once the tube core goes above
-1.0 — which it must, because a pure red is intrinsically low-luma (Rec.709 weights it 0.2126) and
-would otherwise never clear the bloom threshold. Biasing the input toward magenta lands it back on
-crimson. The green frame needs no such trick.
+**7. The sign's colour constants are named for role, not hue** — `SIGN_FRAME` and `SIGN_LETTER`,
+with multipliers solved per hue so a re-colour keeps the same luma balance (frame 1.00, letters
+0.46). Read this before re-hueing: ACES shifts saturated bright colours toward orange as the tube
+core passes 1.0, and a hue carrying little blue has such low Rec.709 luma that it needs a large
+multiplier and lands squarely in that trap. An earlier pure-red version rendered visibly orange and
+had to be biased toward magenta to compensate. Cyan and pink both carry blue, so they need smaller
+multipliers (1.43 and 1.68) and hold their hue with no such trick.
 
 ## Tolerances
 
-Two numbers are tighter than they look:
+Three values are less arbitrary than they look:
 
 - **Tower spacing.** The 1.4 gap is sized against the visible side face, which projects to
   `D·sin(yaw)`. At the worst-case yaw of 21° (base 18° + tilt 3°; tilt and drift cross-fade, they
   never sum) that is 1.003. Re-check this before changing yaw, building depth or tilt amplitude.
+- **Sign height.** `SIGN_Y` is an expression, not a literal: it resolves to the centre of the digit
+  band, so the sign stays in line with the numerals if the band or the row pitch ever move. Note
+  that world-space alignment is not screen-space alignment here — under the isometric projection
+  screen y depends on x and z too, and the towers' own digit bands descend diagonally across the
+  frame. The sign is aligned to tower 5, the one it hangs off, where the residual offset is 0.08
+  world units.
 - **Framing.** `DESIGN_W/H` and `CAM_TARGET` are measured with `?bounds`, not derived by hand — an
   analytical estimate missed the roof cones, antenna masts and rooftop plant and under-reported the
   vertical extent by ~15%, which clipped the skyline at 16:9. Re-measure if the buildings, the slab

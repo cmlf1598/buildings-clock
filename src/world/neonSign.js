@@ -1,6 +1,11 @@
 import * as THREE from "three";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
-import { MAT, SIGN_GREEN, SIGN_RED, SIGN_DIM } from "../emissive/palette.js";
+import {
+  MAT,
+  SIGN_FRAME,
+  SIGN_LETTER,
+  SIGN_DIM,
+} from "../emissive/palette.js";
 import { GLYPHS, SLANT, wordWidth } from "../data/scriptGlyphs.js";
 import {
   SIGN_X,
@@ -20,10 +25,12 @@ import {
 } from "../config.js";
 
 /**
- * The AM/PM sign, as actual neon: a green tube frame with red script letters
- * inside, one box for "am" and one for "pm". Only the active box is lit; the
- * other sits dark enough to read as unlit glass but bright enough that you can
- * still see the letterform, which is what a real double-sided sign looks like.
+ * The AM/PM sign, as actual neon: a tube frame around script lettering, one
+ * box for "am" and one for "pm". Colours live in the palette.
+ *
+ * Only the active box is lit; the other sits dark enough to read as unlit
+ * glass but bright enough that you can still see the letterform, which is what
+ * a real double-sided sign looks like.
  *
  * Everything here is TubeGeometry swept along the centrelines in
  * data/scriptGlyphs.js, because neon IS bent tube - an outline font or a
@@ -92,7 +99,7 @@ class SignBox {
   constructor(word, centreY) {
     const group = new THREE.Group();
 
-    // Green frame.
+    // Tube frame.
     const frameGeo = tubeFrom(
       roundedRectPoints(SIGN_BOX_W, SIGN_BOX_H, SIGN_CORNER_R),
       true,
@@ -104,7 +111,7 @@ class SignBox {
     frame.position.set(0, 0, 0.05);
     group.add(frame);
 
-    // Red letters, scaled to fit the box interior.
+    // Lettering, scaled to fit the box interior.
     const innerW = SIGN_BOX_W - SIGN_BOX_PAD * 2;
     const scale = innerW / wordWidth(word);
     const letterGeo = buildWord(word, scale, -scale * 0.42, SIGN_TUBE_LETTER);
@@ -123,8 +130,8 @@ class SignBox {
 
   applyLevel() {
     const t = this.level;
-    this.frameMat.color.copy(SIGN_DIM.green).lerp(SIGN_GREEN, t);
-    this.letterMat.color.copy(SIGN_DIM.red).lerp(SIGN_RED, t);
+    this.frameMat.color.copy(SIGN_DIM.frame).lerp(SIGN_FRAME, t);
+    this.letterMat.color.copy(SIGN_DIM.letter).lerp(SIGN_LETTER, t);
   }
 
   step(dt) {

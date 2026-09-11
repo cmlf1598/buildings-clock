@@ -105,7 +105,12 @@ export const DIGIT_GAIN = 1.0;
 // inboard of that sits inside the building volume and never renders. It hangs
 // outboard on short brackets, the way a real blade sign does.
 export const SIGN_X = 12.6;
-export const SIGN_Y = 6.1;
+// DERIVED, not a literal: the sign is centred on the digit band so it reads
+// as part of the same row as the numerals rather than floating above them.
+// Keeping this expression means it stays aligned if the band or the row pitch
+// ever move.
+export const SIGN_Y =
+  ROW_Y0 + ((DIGIT_ROW_TOP + DIGIT_ROW_BOTTOM) / 2) * ROW_PITCH;
 export const SIGN_Z = 0.2;
 export const SIGN_W = 2.2; // backing panel
 export const SIGN_H = 4.2;

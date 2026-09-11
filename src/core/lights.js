@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { SIGN_X, SIGN_Y } from "../config.js";
 
 /**
  * Night rig.
@@ -28,11 +29,12 @@ export function createLights(scene) {
   moon.position.set(-9, 14, 6);
   moon.castShadow = false;
 
-  // Practical: spill from the neon sign onto the last tower. Green rather
-  // than warm, because the frame is the brighter half of the sign (luma 1.0
-  // against the letters' 0.46) so it dominates what the wall actually catches.
-  const signGlow = new THREE.PointLight(0x5cff9a, 4, 7, 2);
-  signGlow.position.set(12.3, 6.1, 1.2);
+  // Practical: spill from the neon sign onto the last tower. Tinted to the
+  // FRAME colour, since the frame is the brighter half of the sign (luma 1.0
+  // against the letters' 0.46) and dominates what the wall actually catches.
+  // Re-tint this if the sign is re-hued.
+  const signGlow = new THREE.PointLight(0x5ce8ff, 4, 7, 2);
+  signGlow.position.set(SIGN_X - 0.3, SIGN_Y, 1.2);
   signGlow.castShadow = false;
 
   scene.add(ambient, hemi, moon, signGlow);

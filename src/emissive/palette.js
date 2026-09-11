@@ -37,20 +37,24 @@ export const LIT_COOL = new THREE.Color(0xdfeaff).multiplyScalar(1.7);
 export const LIT_WARM = new THREE.Color(0xffb85c).multiplyScalar(2.46);
 export const OFF = new THREE.Color(0x0a1420).multiplyScalar(1.6);
 
-// Neon sign. Green tube frame, red script letters - the unlit box keeps just
-// enough level that the letterform still reads as glass rather than vanishing.
+// Neon sign. Named for ROLE, not hue, so a palette change does not leave the
+// constants lying about what colour they are.
 //
-// The red is deliberately pushed toward magenta (0xff0048, not a pure red).
-// ACES shifts saturated bright reds toward orange, so a "correct" red hue
-// renders as orange once the tube core goes above 1.0. Biasing the input
-// toward magenta lands it back on crimson. Any pure red is also intrinsically
-// low-luma (Rec.709 weights it 0.2126), which is why the multiplier has to be
-// this high to clear the bloom threshold at all.
-export const SIGN_GREEN = new THREE.Color(0x3bff7a).multiplyScalar(1.35);
-export const SIGN_RED = new THREE.Color(0xff0048).multiplyScalar(2.1);
+// The unlit box keeps just enough level that the letterform still reads as
+// unlit glass rather than vanishing.
+//
+// Multipliers are solved so the frame lands at luma ~1.0 and the letters at
+// ~0.46, both clear of the 0.58 bloom threshold for the frame and just under
+// it for the letters. Worth knowing if you re-hue these: ACES shifts
+// saturated bright HUES toward orange as the tube core passes 1.0, and a
+// colour with little blue in it (a pure red, say) has such low Rec.709 luma
+// that it needs a big multiplier and lands squarely in that trap. Pink and
+// cyan both carry blue, need smaller multipliers, and hold their hue.
+export const SIGN_FRAME = new THREE.Color(0x2ff0ff).multiplyScalar(1.43);
+export const SIGN_LETTER = new THREE.Color(0xff3fa0).multiplyScalar(1.68);
 export const SIGN_DIM = {
-  green: new THREE.Color(0x3bff7a).multiplyScalar(0.1),
-  red: new THREE.Color(0xff0048).multiplyScalar(0.16),
+  frame: new THREE.Color(0x2ff0ff).multiplyScalar(0.1),
+  letter: new THREE.Color(0xff3fa0).multiplyScalar(0.16),
 };
 
 export const LAMP = new THREE.Color(0xffd9a0).multiplyScalar(1.09);
