@@ -22,13 +22,11 @@ import {
 
 export const FACE_FRONT = 0;
 export const FACE_SIDE = 1;
-export const FACE_SIGN = 2;
-export const FACE_PROP = 3;
+export const FACE_PROP = 2;
 
 export const KIND_DIGIT = 0;
 export const KIND_AMBIENT = 1;
-export const KIND_SIGN = 2;
-export const KIND_PROP = 3;
+export const KIND_PROP = 2;
 
 export const ROLE_DIGIT = "digit";
 export const ROLE_COLON = "colon";

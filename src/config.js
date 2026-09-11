@@ -101,28 +101,25 @@ export const DIGIT_GAIN = 1.0;
 // Blade sign (AM/PM), mounted on the +X flank of the last clock tower
 // ---------------------------------------------------------------------------
 
-// Tower 4 flank is at x = 11.3. The panel must clear it ENTIRELY: at 11.6
-// the inner half of every letter (x < 11.3) sat inside the building volume
-// and was invisible, which made the sign unreadable. Mounted outboard on
-// short brackets instead, the way a real blade sign hangs.
-export const SIGN_X = 12.05;
-export const SIGN_Y = 5.13;
+// Tower 5's flank is at x = 11.3. The sign must clear it ENTIRELY: anything
+// inboard of that sits inside the building volume and never renders. It hangs
+// outboard on short brackets, the way a real blade sign does.
+export const SIGN_X = 12.6;
+export const SIGN_Y = 6.1;
 export const SIGN_Z = 0.2;
-export const SIGN_W = 1.4;
-export const SIGN_H = 7.6;
+export const SIGN_W = 2.2; // backing panel
+export const SIGN_H = 4.2;
 export const SIGN_D = 0.14;
-// Same tilt pre-compensation as the window grid: the vertical pitch is
-// stretched by cos(yaw)/cos(pitch) so the letterforms project with correct
-// proportions instead of the squashed look a uniform pitch would give.
-export const SIGN_DOT_PITCH_X = 0.24;
-export const SIGN_DOT_PITCH_Y =
-  SIGN_DOT_PITCH_X * (Math.cos(BASE_YAW) / Math.cos(BASE_PITCH));
-export const SIGN_DOT_SIZE = 0.17;
-export const SIGN_GAIN_ON = 0.85; // relative to a lit digit
-export const SIGN_GAIN_OFF = 0.05; // ghosted, but the letterform stays readable
-// World y of each letter TOP dot row: A, M, (wider gap), P, M.
-// The extra space before P groups these as two words, not four loose letters.
-export const SIGN_LETTER_TOPS = [8.7, 6.898, 4.916, 3.114];
+
+// Two neon boxes stacked on the panel: "am" above, "pm" below.
+export const SIGN_BOX_W = 2.0;
+export const SIGN_BOX_H = 1.8;
+export const SIGN_BOX_GAP = 0.3;
+export const SIGN_BOX_PAD = 0.22; // inset from the frame to the lettering
+export const SIGN_CORNER_R = 0.16;
+export const SIGN_TUBE_BORDER = 0.045;
+export const SIGN_TUBE_LETTER = 0.05;
+export const SIGN_FADE = 0.45; // seconds to cross-fade at noon and midnight
 
 // ---------------------------------------------------------------------------
 // Ground

@@ -1,12 +1,7 @@
 import * as THREE from "three";
 import "./style.css";
 
-import {
-  debug,
-  SIGN_GAIN_ON,
-  SIGN_GAIN_OFF,
-  CAM_TARGET,
-} from "./config.js";
+import { debug, CAM_TARGET } from "./config.js";
 import { createRenderer } from "./core/renderer.js";
 import { createScene } from "./core/scene.js";
 import {
@@ -21,7 +16,7 @@ import { createComposer, resizeComposer } from "./core/composer.js";
 import { createBuildings } from "./world/buildings.js";
 import { createGround } from "./world/ground.js";
 import { createProps } from "./world/props.js";
-import { createBladeSign } from "./world/bladeSign.js";
+import { NeonSign } from "./world/neonSign.js";
 import { TOWERS, DIGIT_SLOTS } from "./world/layout.js";
 
 import { WindowField } from "./emissive/WindowField.js";
@@ -39,7 +34,7 @@ createLights(scene);
 createGround(scene);
 createBuildings(scene);
 createProps(scene);
-createBladeSign(scene);
+const sign = new NeonSign(scene);
 
 const field = new WindowField();
 scene.add(field.mesh);
@@ -78,13 +73,7 @@ function applyReading(r) {
 
   if (r.isPM !== isPM) {
     isPM = r.isPM;
-    const [a, m1, p, m2] = field.signLetters;
-    const on = SIGN_GAIN_ON;
-    const off = SIGN_GAIN_OFF;
-    animator.applyGroup(a, isPM ? off : on);
-    animator.applyGroup(m1, isPM ? off : on);
-    animator.applyGroup(p, isPM ? on : off);
-    animator.applyGroup(m2, isPM ? on : off);
+    sign.setPM(isPM);
   }
 }
 
@@ -168,6 +157,7 @@ function animate(timestamp) {
   field.pulseColon(t);
   field.pulseBeacons(t);
   animator.step(dt);
+  sign.step(dt);
   field.flush();
 
   composer.render(); // NOT renderer.render()

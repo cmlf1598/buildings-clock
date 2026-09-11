@@ -105,22 +105,6 @@ export class Animator {
     prev.set(next);
   }
 
-  /** Fades a group of sign dots to a level, with a small per-dot jitter. */
-  applyGroup(indices, level, duration = ON_DURATION) {
-    for (let k = 0; k < indices.length; k++) {
-      const i = indices[k];
-      if (Math.abs(this.f.target[i] - level) < 1e-4) continue;
-      const rising = level > this.f.current[i];
-      this.schedule(
-        i,
-        level,
-        hash01(i * 104729) * 0.18,
-        rising ? duration : OFF_DURATION,
-        rising ? 1 : 0,
-      );
-    }
-  }
-
   step(dt) {
     const f = this.f;
     for (let s = 0; s < this.activeCount; ) {

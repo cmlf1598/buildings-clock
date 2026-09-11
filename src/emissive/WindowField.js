@@ -9,11 +9,11 @@ const _dummy = new THREE.Object3D();
 const _c = new THREE.Color();
 
 /**
- * Every glowing quad in the scene: facade windows, blade-sign dots,
- * streetlamps, car lights, rooftop beacons. One InstancedMesh, one draw call.
+ * Every glowing quad in the scene: facade windows, streetlamps, car lights
+ * and rooftop beacons. One InstancedMesh, one draw call.
  *
  * Geometry is a UNIT plane; per-instance scale gives each quad its real size,
- * which is what lets a 0.34 facade window and a 0.11 sign dot share one mesh.
+ * which is what lets a 0.34 facade window and a 0.09 car light share one mesh.
  *
  * The material is MeshBasicMaterial with a white base colour, so instanceColor
  * IS the output. Note that toneMapped:false is deliberately NOT set here: it
@@ -30,7 +30,6 @@ export class WindowField {
     this.count = n;
     this.digitMap = layout.digitMap;
     this.colonMap = layout.colonMap;
-    this.signLetters = layout.signLetters;
     this.beacons = layout.beacons;
 
     const geometry = new THREE.PlaneGeometry(1, 1);

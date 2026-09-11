@@ -28,9 +28,11 @@ export function createLights(scene) {
   moon.position.set(-9, 14, 6);
   moon.castShadow = false;
 
-  // Practical: warm spill from the blade sign onto the last tower.
-  const signGlow = new THREE.PointLight(0xffa04d, 6, 8, 2);
-  signGlow.position.set(12.4, 5.1, 1.3);
+  // Practical: spill from the neon sign onto the last tower. Green rather
+  // than warm, because the frame is the brighter half of the sign (luma 1.0
+  // against the letters' 0.46) so it dominates what the wall actually catches.
+  const signGlow = new THREE.PointLight(0x5cff9a, 4, 7, 2);
+  signGlow.position.set(12.3, 6.1, 1.2);
   signGlow.castShadow = false;
 
   scene.add(ambient, hemi, moon, signGlow);

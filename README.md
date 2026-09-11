@@ -1,8 +1,9 @@
 # Buildings Clock
 
 A night city on a floating diorama slab, seen through an orthographic camera. Five towers in the
-front row are a dot-matrix clock: lit windows spell the time. A blade sign on the last tower shows
-AM/PM, and the camera leans toward your pointer and drifts on its own when you leave it alone.
+front row are a dot-matrix clock: lit windows spell the time. A neon blade sign on the last tower
+shows AM/PM in red script inside a green tube frame, and the camera leans toward your pointer and
+drifts on its own when you leave it alone.
 
 ```
 npm install
@@ -19,7 +20,7 @@ Then open the printed URL. `npm run build` / `npm run preview` for production.
 | 2 | hours, ones |
 | 3 | the colon, pulsing once per second |
 | 4 | minutes, tens |
-| 5 | minutes, ones, with the AM/PM blade sign on its flank |
+| 5 | minutes, ones, with the neon AM/PM sign hanging off its flank |
 
 12-hour format. Midnight reads 12:00 AM, noon 12:00 PM.
 
@@ -52,22 +53,30 @@ three-digit change all at once.
 src/
   config.js          every tunable number + the URL flags. Single source of truth
   core/              renderer, scene, camera, lights, composer
-  world/             layout data, building bodies + roofs, ground slab, props, blade sign
+  world/             layout data, building bodies + roofs, ground slab, props, neon sign
   emissive/          the instanced light field, palette, animator
-  data/font5x7.js    glyph bitmaps, validated at import time
+  data/font5x7.js    digit bitmaps, validated at import time
+  data/scriptGlyphs.js  neon tube centrelines for the script "am" / "pm"
   time/clock.js      time source and 12-hour conversion
 ```
 
-**A single InstancedMesh carries every glowing thing in the scene.** `WindowField` (~1500 unit
-quads) is every facade window, blade-sign dot, streetlamp, car light and rooftop beacon — one draw
-call. It uses `MeshBasicMaterial` with a white base colour so `instanceColor` *is* the output, and
-brightness is just a per-instance multiplier, which is what makes the fades, the colon pulse and the
-AM/PM switch all the same mechanism. Whole scene: 78 draw calls, 4.6k triangles.
+**A single InstancedMesh carries every glowing window.** `WindowField` (~1440 unit quads) is every
+facade window, streetlamp, car light and rooftop beacon — one draw call. It uses
+`MeshBasicMaterial` with a white base colour so `instanceColor` *is* the output, and brightness is
+just a per-instance multiplier, which is what makes the digit fades and the colon pulse the same
+mechanism.
+
+**The neon sign is real tube geometry**, not a texture or a dot matrix: `TubeGeometry` swept along
+hand-authored centrelines in `data/scriptGlyphs.js`, because neon *is* bent tube and nothing else
+gives you the continuous stroke and round cross-section that makes the glow read right. All strokes
+of one box merge into a single geometry, so the sign is four meshes — two frames, two words — and it
+cross-fades by tweening material colours rather than going through the window animator. Whole scene:
+82 draw calls, 11k triangles.
 
 Everything random is seeded (`mulberry32`, consumed once at build time in a fixed traversal order),
 so the city is identical on every reload. `Math.random()` is never called.
 
-## Six things that look wrong but are deliberate
+## Seven things that look wrong but are deliberate
 
 These each cost real debugging time. Please don't "fix" them back.
 
@@ -95,9 +104,15 @@ target: digits 1.39, brightest ambient 0.56, threshold 0.58. The first attempt h
 ambient windows at luma 2.13 — *exactly as bright as the digits* — and the whole skyline bloomed
 into white mush. If you raise `AMBIENT_GAIN_MAX` toward 1.0 you will reproduce that.
 
-**6. The blade sign clears tower 5 entirely in x.** The tower flank is at x = 11.3; any dot placed
+**6. The sign clears tower 5 entirely in x.** The tower flank is at x = 11.3; anything placed
 inboard of that sits inside the building volume and simply does not render. An earlier version
 centred the sign at 11.6 and buried the inner half of every letter. The brackets hide the gap.
+
+**7. The neon red is biased toward magenta (`0xff0048`), not a pure red.** ACES shifts saturated
+bright reds toward orange, so a "correct" red hue renders as orange once the tube core goes above
+1.0 — which it must, because a pure red is intrinsically low-luma (Rec.709 weights it 0.2126) and
+would otherwise never clear the bloom threshold. Biasing the input toward magenta lands it back on
+crimson. The green frame needs no such trick.
 
 ## Tolerances
 

@@ -24,14 +24,6 @@ import {
   AMBIENT_GAIN_MAX,
   AMBIENT_WARM_CHANCE,
   DIGIT_ROW_TOP,
-  SIGN_X,
-  SIGN_Z,
-  SIGN_D,
-  SIGN_DOT_PITCH_X,
-  SIGN_DOT_PITCH_Y,
-  SIGN_DOT_SIZE,
-  SIGN_LETTER_TOPS,
-  SIGN_GAIN_OFF,
   SEED,
 } from "../config.js";
 import {
@@ -50,10 +42,9 @@ import {
   isDigitRow,
   KIND_DIGIT,
   KIND_AMBIENT,
-  KIND_SIGN,
   KIND_PROP,
 } from "../world/layout.js";
-import { GLYPHS, GLYPH_W, GLYPH_H, COLON_W } from "../data/font5x7.js";
+import { GLYPH_W, GLYPH_H, COLON_W } from "../data/font5x7.js";
 import { mulberry32 } from "../util/rng.js";
 import {
   HUE_COOL,
@@ -70,7 +61,6 @@ export function buildWindowLayout() {
   const items = []; // { x, y, z, rotY, w, h, kind, hue, base, start }
   const digitMap = {}; // tower slot -> Int32Array(GLYPH_W * GLYPH_H)
   let colonMap = null;
-  const signLetters = []; // 4 x Int32Array of lit-cell instance indices
   const beacons = [];
 
   const push = (o) => {
@@ -182,34 +172,6 @@ export function buildWindowLayout() {
     }
   }
 
-  // -- Blade sign -----------------------------------------------------------
-  const letters = ["A", "M", "P", "M"];
-  for (let li = 0; li < letters.length; li++) {
-    const glyph = GLYPHS[letters[li]];
-    const top = SIGN_LETTER_TOPS[li];
-    const lit = [];
-    for (let r = 0; r < GLYPH_H; r++) {
-      for (let c = 0; c < GLYPH_W; c++) {
-        if (!glyph[r * GLYPH_W + c]) continue;
-        lit.push(
-          push({
-            x: SIGN_X + (c - (GLYPH_W - 1) / 2) * SIGN_DOT_PITCH_X,
-            y: top - r * SIGN_DOT_PITCH_Y,
-            z: SIGN_Z + SIGN_D / 2 + 0.008,
-            rotY: 0,
-            w: SIGN_DOT_SIZE,
-            h: SIGN_DOT_SIZE,
-            kind: KIND_SIGN,
-            hue: HUE_WARM,
-            base: SIGN_GAIN_OFF,
-            start: SIGN_GAIN_OFF,
-          }),
-        );
-      }
-    }
-    signLetters.push(Int32Array.from(lit));
-  }
-
   // -- Props ----------------------------------------------------------------
   for (const l of LAMPS) {
     push({
@@ -254,5 +216,5 @@ export function buildWindowLayout() {
     });
   }
 
-  return { items, digitMap, colonMap, signLetters, beacons };
+  return { items, digitMap, colonMap, beacons };
 }
