@@ -8,11 +8,18 @@ const _dummy = new THREE.Object3D();
 const _c = new THREE.Color();
 
 /**
- * Every glowing quad in the scene: facade windows, streetlamps, car lights
- * and rooftop beacons. One InstancedMesh, one draw call.
+ * Every glowing quad that stays PUT: facade windows, shop fronts and their
+ * fascia signs, streetlamp heads, the billboard's floodlights and the rooftop
+ * beacons. One InstancedMesh, one draw call.
  *
  * Geometry is a UNIT plane; per-instance scale gives each quad its real size,
- * which is what lets a 0.34 facade window and a 0.09 car light share one mesh.
+ * which is what lets a 0.34 facade window and a 0.1 lamp head share one mesh.
+ *
+ * Headlights are NOT here, and the reason is the qualifier above. Every matrix
+ * in this mesh is written once at construction and never touched again, which
+ * is right for a window and useless for a moving car - and re-uploading a
+ * 1465-instance buffer every frame to move twelve of them would be absurd. They
+ * live in world/traffic.js with the bodies they belong to.
  *
  * The material is MeshBasicMaterial with a white base colour, so instanceColor
  * IS the output. Note that toneMapped:false is deliberately NOT set here: it

@@ -5,6 +5,7 @@
  *     T=23:59 node tools/preview.mjs out.png          # a different reading
  *     TGT=-4.5,7.5,-10.8 FH=8 node tools/preview.mjs out.png   # zoom in
  *     RT=3600 node tools/preview.mjs out.png          # the city an hour in
+ *     CT=4 node tools/preview.mjs out.png              # traffic 4s into its lap
  *
  * TGT and FH move and tighten the camera for inspecting one detail. They do
  * NOT change the scene - the shipped framing is whatever config.js says, and
@@ -47,6 +48,7 @@ import { createBuildings } from "../src/world/buildings.js";
 import { createBillboard } from "../src/world/billboard.js";
 import { createShops } from "../src/world/shops.js";
 import { createProps } from "../src/world/props.js";
+import { Traffic } from "../src/world/traffic.js";
 import { NeonSign } from "../src/world/neonSign.js";
 import { CitySigns } from "../src/world/citySigns.js";
 import { NeonBezels } from "../src/world/neonBezel.js";
@@ -69,6 +71,8 @@ createBuildings(scene);
 createBillboard(scene);
 createShops(scene);
 createProps(scene);
+const traffic = new Traffic(scene);
+traffic.step(Number(process.env.CT ?? 0));
 const amPm = new NeonSign(scene);
 amPm.setPM(false); // "am" lit, matching a fresh morning load
 amPm.step(10); // settle the cross-fade instead of catching it mid-fade

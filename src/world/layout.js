@@ -11,6 +11,9 @@
  */
 
 import {
+  CAR_LANE,
+  ROADS_X,
+  ROADS_Z,
   SHOP_W,
   SHOP_DX,
   SHOP_POST_W,
@@ -451,14 +454,52 @@ export const LAMPS = [
   [12.5, -2.05],
 ].map(([x, z]) => ({ x, z }));
 
-/** Parked cars: [x, z, facing] where facing is +1 (+X) or -1 (-X). */
+/**
+ * Two circuits of the block, running opposite ways.
+ *
+ * Both are the same rectangle - the front road, the mid road, and the outer
+ * pair of roads running along Z - offset to opposite sides of the centreline by
+ * CAR_LANE. The offsets are not arbitrary: on every leg of both routes the lane
+ * is on the LEFT of travel, because that is the side Japan drives on. Facing
+ * +X, left is -Z; facing -Z, left is -X. Work any corner through and it holds.
+ *
+ * Listed as corners in traversal order and closed implicitly, so reversing a
+ * route means reversing this list and flipping its offset.
+ */
+const [ZF, ZM] = ROADS_Z; // front road, mid road
+const XL = ROADS_X[0]; // the two that fall in the tower-row gaps
+const XR = ROADS_X[ROADS_X.length - 1];
+
+export const CAR_ROUTES = [
+  // Outer lane, anticlockwise seen from above: -X along the front road.
+  [
+    [XR + CAR_LANE, ZF + CAR_LANE],
+    [XL - CAR_LANE, ZF + CAR_LANE],
+    [XL - CAR_LANE, ZM - CAR_LANE],
+    [XR + CAR_LANE, ZM - CAR_LANE],
+  ],
+  // Inner lane, clockwise: +X along the front road, passing the outer cars
+  // nose to nose the way opposing traffic should.
+  [
+    [XL + CAR_LANE, ZF - CAR_LANE],
+    [XR - CAR_LANE, ZF - CAR_LANE],
+    [XR - CAR_LANE, ZM + CAR_LANE],
+    [XL + CAR_LANE, ZM + CAR_LANE],
+  ],
+];
+
+/**
+ * Which route each car runs and where it starts, as a FRACTION of that route's
+ * length. Cars on one route share a speed, so these gaps are preserved for
+ * good - uneven on purpose, since evenly spaced cars read as a metronome.
+ */
 export const CARS = [
-  { x: -11.0, z: 3.2, dir: 1 },
-  { x: -2.4, z: 3.45, dir: 1 },
-  { x: 6.2, z: 2.95, dir: -1 },
-  { x: 12.0, z: 3.3, dir: -1 },
-  { x: -7.6, z: -3.05, dir: 1 },
-  { x: 3.4, z: -2.6, dir: -1 },
+  { route: 0, at: 0.0 },
+  { route: 0, at: 0.29 },
+  { route: 0, at: 0.63 },
+  { route: 1, at: 0.12 },
+  { route: 1, at: 0.44 },
+  { route: 1, at: 0.79 },
 ];
 
 export const CAR_W = 0.72;

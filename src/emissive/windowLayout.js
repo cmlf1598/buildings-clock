@@ -34,10 +34,6 @@ import {
   TOWERS,
   FILLERS,
   LAMPS,
-  CARS,
-  CAR_W,
-  CAR_H,
-  CAR_D,
   LAMP_HEIGHT,
   billboardParts,
   shopParts,
@@ -298,34 +294,6 @@ export function buildWindowLayout() {
       hue: HUE_LAMP,
       base: 1.0,
       start: 1.0,
-    });
-  }
-
-  for (const car of CARS) {
-    const zFace = car.z + CAR_D / 2 + 0.01;
-    push({
-      x: car.x + car.dir * (CAR_W / 2 - 0.1),
-      y: CAR_H * 0.62,
-      z: zFace,
-      rotY: 0,
-      w: 0.09,
-      h: 0.07,
-      kind: KIND_PROP,
-      hue: HUE_HEAD,
-      base: 0.95,
-      start: 0.95,
-    });
-    push({
-      x: car.x - car.dir * (CAR_W / 2 - 0.1),
-      y: CAR_H * 0.62,
-      z: zFace,
-      rotY: 0,
-      w: 0.08,
-      h: 0.07,
-      kind: KIND_PROP,
-      hue: HUE_TAIL,
-      base: 0.55,
-      start: 0.55,
     });
   }
 

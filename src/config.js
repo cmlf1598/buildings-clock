@@ -293,6 +293,31 @@ export const MOON_INTENSITY = 2.5;
 export const MOON_DIR = [-9, 14, 6];
 
 // ---------------------------------------------------------------------------
+// Traffic
+//
+// The cars drive a circuit of the block rather than sitting parked. The routes
+// use the outer pair of ROADS_X, which fall exactly in the gaps between the
+// clock towers - so a car crossing the tower row appears and disappears
+// between buildings instead of sliding past a flat wall.
+//
+// CAR_LANE offsets each route to its own side of the centreline, and the two
+// routes run in OPPOSITE directions, which is what makes it read as a street
+// rather than as a conveyor. Japan drives on the left, and both routes are laid
+// out that way; see CAR_ROUTES.
+//
+// Cars on one route share a speed and keep their spacing forever, so they can
+// never drift into each other. The variety comes from the two routes running at
+// different speeds, not from jittering cars on the same loop - that only looks
+// alive until the fast one catches the slow one and drives through it.
+// ---------------------------------------------------------------------------
+
+export const CAR_LANE = 0.28; // from the road centreline; ROAD_W is 1.1
+export const CAR_SPEED = [2.1, 1.75]; // per route, world units a second
+export const CAR_HEAD_W = 0.09;
+export const CAR_TAIL_W = 0.08;
+export const CAR_LIGHT_H = 0.07;
+
+// ---------------------------------------------------------------------------
 // Street-level shop fronts
 //
 // Two to a digit tower, in the blank band below the lowest window row. That

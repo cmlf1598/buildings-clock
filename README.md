@@ -145,6 +145,35 @@ before a turn bends. That leaves a fillet of a known, small radius on every corn
 a tube bender actually produces, and why the corners read as neither mitred nor melted. Do not
 pre-round the stroke data by hand; you would be applying the same fillet twice.
 
+## Traffic
+
+Six cars drive a circuit of the block rather than sitting parked. Two routes,
+**running opposite ways**, on the front road, the mid road, and the outer pair of roads running
+along Z — which is the detail that makes it worth doing: those two fall exactly in the gaps between
+the clock towers, so a car crossing the tower row appears and disappears between buildings instead
+of sliding past a flat wall.
+
+**Both routes drive on the left.** `CAR_LANE` offsets each to its own side of the centreline, and
+the offsets are not arbitrary — on every leg of both circuits the lane is on the left of travel,
+because that is the side Japan drives on. Facing +X, left is −Z; facing −Z, left is −X. Work any
+corner through and it holds. The two routes then pass each other nose to nose the way opposing
+traffic should.
+
+Position is arc length along a closed polyline, so heading is just the tangent of whatever segment
+a car is on and corners need no special case. Each route's length is measured once; a frame is one
+modulo and a walk over four segments.
+
+**Cars on one route share a speed** and so keep their spacing for good — they can never drift into
+each other. The variety comes from the two routes running at different speeds, not from jittering
+cars around one loop, which only looks alive until the fast one catches the slow one and drives
+through it. Their start offsets are uneven on purpose; evenly spaced cars read as a metronome.
+
+The bodies and their lights live in the same module, which is the point of it existing. The lights
+were quads in `WindowField`, where every instance matrix is written once at build time — right for
+a window, useless for a headlight. The lights do *not* rotate with the car: they are flat quads
+standing in for points of light, and turning them with the body would make them vanish edge-on
+halfway round every corner.
+
 ## Shop fronts
 
 The digit towers carry two shops each along the bottom, in the blank band under the lowest window
@@ -314,6 +343,7 @@ src/
   world/citySigns.js the seven kanji signs
   world/billboard.js the one painted, floodlit sign
   world/shops.js     street-level frontages, open and shuttered
+  world/traffic.js   cars driving the block, bodies and lights
   world/neonBezel.js buildings outlined in tube
   world/castleRoof.js  the generated tenshu roof
   emissive/neonLife.js breathing and the failing tubes
@@ -339,7 +369,7 @@ npm run preview   # what does it look like?
 ```
 
 **A single InstancedMesh carries every glowing window.** `WindowField` (~1440 unit quads) is every
-facade window, streetlamp, car light and rooftop beacon — one draw call. It uses
+facade window, shop front, streetlamp head and rooftop beacon that stays put — one draw call. It uses
 `MeshBasicMaterial` with a white base colour so `instanceColor` *is* the output, and brightness is
 just a per-instance multiplier, which is what makes the digit fades, the room toggles and the
 second-hand swap all the same mechanism.

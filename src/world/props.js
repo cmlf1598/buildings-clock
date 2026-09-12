@@ -1,16 +1,19 @@
 import * as THREE from "three";
 import { MAT } from "../emissive/palette.js";
-import { LAMPS, CARS, CAR_W, CAR_H, CAR_D, LAMP_HEIGHT } from "./layout.js";
+import { LAMPS, LAMP_HEIGHT } from "./layout.js";
 
 const _dummy = new THREE.Object3D();
 
 /**
- * Streetlamp posts and car bodies.
+ * Streetlamp posts.
  *
- * Both are instanced, so the whole prop layer costs two draw calls no matter
- * how many get added later. Their light sources are NOT here - lamp heads,
- * headlights and taillights live in WindowField so they bloom with everything
- * else in the scene.
+ * Instanced, so the lamp layer costs one draw call however many get added. The
+ * lamp HEADS are not here - those are quads in WindowField, so they bloom with
+ * everything else in the scene.
+ *
+ * The cars used to live here too. They moved to traffic.js when they started
+ * driving: a parked car is a matrix written once, and a moving one is a matrix
+ * written every frame, which is a different kind of object.
  */
 export function createProps(scene) {
   const group = new THREE.Group();
@@ -28,19 +31,6 @@ export function createProps(scene) {
   });
   posts.instanceMatrix.needsUpdate = true;
   group.add(posts);
-
-  const carGeo = new THREE.BoxGeometry(1, 1, 1);
-  const cars = new THREE.InstancedMesh(carGeo, mat, CARS.length);
-  cars.frustumCulled = false;
-  CARS.forEach((c, i) => {
-    _dummy.position.set(c.x, CAR_H / 2, c.z);
-    _dummy.rotation.set(0, 0, 0);
-    _dummy.scale.set(CAR_W, CAR_H, CAR_D);
-    _dummy.updateMatrix();
-    cars.setMatrixAt(i, _dummy.matrix);
-  });
-  cars.instanceMatrix.needsUpdate = true;
-  group.add(cars);
 
   scene.add(group);
   return group;
