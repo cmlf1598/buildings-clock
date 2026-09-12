@@ -33,7 +33,7 @@ export const CAM_DIST = 60;
 // centre. Measured with ?bounds rather than derived by hand: an analytical
 // estimate missed the roof cones, antenna masts and rooftop plant, and
 // under-reported the vertical extent by about 15%.
-export const CAM_TARGET = [1.21, 5.32, -3.89];
+export const CAM_TARGET = [1.14, 5.18, -3.78];
 export const CAM_NEAR = 1;
 export const CAM_FAR = 200;
 
@@ -176,6 +176,64 @@ export const CITY_BLADE_EM = 1.2;
 // The small blade under the AM/PM sign, on the same bracket line.
 export const CITY_UNDER_Y = 1.75;
 export const CITY_UNDER_EM = 0.95;
+
+// ---------------------------------------------------------------------------
+// Neon bezels
+//
+// Tube run along a building's own edges, the way a Tokyo block outlines its
+// architecture after dark. Same mechanism as the sign frames - this is the
+// building wearing one.
+// ---------------------------------------------------------------------------
+
+export const BEZEL_TUBE = 0.035;
+export const BEZEL_LIFT = 0.03; // float off the wall, so the tube never z-fights
+
+// Cone roofs, as ratios of their building's width. These used to be literals
+// inside buildings.js; they are here because the bezel has to trace the SAME
+// pyramid the solid is built from, and two copies of "0.72" in two files is
+// exactly how that stops being true.
+//
+// Both entries are 4-sided cones turned 45 degrees, which is why a square base
+// half-extent is r * W * cos(45) rather than r * W.
+export const CONE_ROOF = {
+  pyramid: { r: 0.72, h: 1.6 },
+  pitched: { r: 0.78, h: 0.9 },
+};
+
+// ---------------------------------------------------------------------------
+// Castle roof (tenshu)
+//
+// A tiered donjon roof, generated rather than modelled. Every number below is
+// a RATIO of the storey it sits on, so the whole thing scales with its host
+// building and the tiers stay in proportion to each other.
+//
+// The two that carry the look:
+//
+// CASTLE_CONCAVE is the exponent on the roof's vertical profile. Above 1 the
+// surface rises slowly off the eave and steeply into the ridge, which is the
+// dished, flared section every Japanese roof has. At exactly 1 you get a plain
+// straight-sided hip roof and the whole silhouette stops reading as Japanese.
+//
+// CASTLE_FLICK is the other half: the eave line lifts at the corners and dips
+// at the middle of each side, on a parabola. That single curve is the most
+// recognisable thing about the form, which is why the bezel traces it.
+// ---------------------------------------------------------------------------
+
+export const CASTLE_TIERS = 3;
+export const CASTLE_SHRINK = 0.7; // each storey against the one below
+export const CASTLE_EAVE_OVER = 1.2; // eave overhang, against its own storey
+export const CASTLE_RISE = 0.4; // roof rise, against the eave half-width
+export const CASTLE_DRUM = 0.42; // storey wall height, against its half-width
+export const CASTLE_RIDGE = 0.45; // ridge half-length, against the eave half-width
+export const CASTLE_FLICK = 0.095; // corner lift, against the eave half-width
+// Exponent on the corner lift. At 2 (a plain parabola) the rise is spread over
+// the whole side and the eave reads as a sagging hammock; a real eave runs
+// straight for most of its span and turns up only in the last quarter, which
+// is what a higher power gives.
+export const CASTLE_FLICK_POW = 3.4;
+export const CASTLE_CONCAVE = 1.7;
+export const CASTLE_RINGS = 5; // loft rings from eave to ridge
+export const CASTLE_SAMPLES = 5; // eave points per side
 
 // ---------------------------------------------------------------------------
 // Ground

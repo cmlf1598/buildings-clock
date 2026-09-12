@@ -3,7 +3,8 @@
 A night city on a floating diorama slab, seen through an orthographic camera. Five towers in the
 front row are a dot-matrix clock: lit windows spell the time. A neon blade sign on the last tower
 shows AM/PM in pink script inside a cyan tube frame, seven kanji signs stand on the rooftops and
-hang off the flanks, and the camera leans toward your pointer and drifts on its own when you leave
+hang off the flanks, two buildings at the back are outlined in neon — one of them a tiered castle
+roof drawn in tube — and the camera leans toward your pointer and drifts on its own when you leave
 it alone.
 
 ```
@@ -63,6 +64,45 @@ before a turn bends. That leaves a fillet of a known, small radius on every corn
 a tube bender actually produces, and why the corners read as neither mitred nor melted. Do not
 pre-round the stroke data by hand; you would be applying the same fillet twice.
 
+## The bezels, and the castle
+
+Two buildings in the back wear their neon instead of carrying it: tube run along the building's own
+edges, which is what a Tokyo block does after dark. It is the AM/PM sign's frame scaled up and
+wrapped around architecture — same palette, same `tubeFrom`, same everything.
+
+- **`b2`** gets the plain treatment: roofline loop plus the four vertical corners.
+- **`f4`**, the pyramid standing behind the minutes-ones tower, gets its base square and its four
+  hip edges traced.
+
+The pyramid's dimensions come from `CONE_ROOF` in `config.js`, which is also what `buildings.js`
+builds the solid from. Two copies of `0.72` in two files is exactly how a bezel stops tracing the
+roof it is supposed to be tracing. Note the `cos(45°)`: both cone roofs are four-sided and turned
+45°, so the base is an axis-aligned square of half-extent `r · W · cos(45°)`, not `r · W`.
+
+**The castle keeps its shape and loses its bezel.** `b1` carries a generated tenshu — three tiers,
+each storey a fixed ratio of the one below — and it was outlined in neon first. That was worse. A
+tenshu is mostly *surface*, and lighting every eave, ridge and hip put so much line on the
+silhouette that the solid underneath stopped reading; it came out as a stack of glowing hoops rather
+than a roof. A pyramid has nothing to lose by being drawn, because it is four straight edges to a
+point and the tube states the entire form. The castle is better as a dark shape against the sky.
+
+Two things still make that shape read as Japanese rather than as a generic pagoda, and both are
+tunable:
+
+- **`CASTLE_FLICK_POW`** — the eave lifts at the corners on a curve of this power. At 2 (a plain
+  parabola) the rise spreads over the whole side and the eave sags like a hammock. A real eave runs
+  straight for most of its span and turns up only in the last quarter, so the exponent is 3.4.
+- **`CASTLE_CONCAVE`** — the exponent on the roof's vertical profile. Above 1 the surface rises
+  slowly off the eave and steeply into the ridge, which is the dished section that flares the eave
+  outward. At exactly 1 you get a plain straight-sided hip roof and the whole thing stops reading.
+
+`CASTLE_FLICK` — how far the corners lift — started at 0.13 of the eave half-width and read as a
+Chinese temple. A tenshu's lift is about half that.
+
+Ridges and hips lie exactly *on* the surface they trace, so every bezel line is lifted clear of its
+solid by the tube radius plus a margin. Without that the solid wins the depth test along the whole
+length and the tube simply is not there.
+
 ## Debug flags
 
 Append to the URL. No rebuild needed.
@@ -88,9 +128,12 @@ src/
   config.js          every tunable number + the URL flags. Single source of truth
   core/              renderer, scene, camera, lights, composer
   world/             layout data, building bodies + roofs, ground slab, props, signs
-  world/tube.js      neon tube sweeping, shared by both kinds of sign
+  world/tube.js      neon tube sweeping, shared by every lit sign and bezel
   world/neonSign.js  the AM/PM blade
   world/citySigns.js the seven kanji signs
+  world/neonBezel.js buildings outlined in tube
+  world/castleRoof.js  the generated tenshu roof
+  emissive/neonLife.js breathing and the one failing tube
   emissive/          the instanced light field, palette, animator
   data/font5x7.js    digit bitmaps, validated at import time
   data/scriptGlyphs.js  neon tube centrelines for the script "am" / "pm"
@@ -124,9 +167,9 @@ cross-fades by tweening material colours rather than going through the window an
 
 **The kanji signs cost 13 meshes between them, not 28.** Every panel, leg and bracket in the city
 shares one material, so they merge into a single mesh; only the lit tubes need one each, because
-each sign is its own colour. Whole scene: 95 draw calls, 27k triangles. (Draw calls exceed the mesh
+each sign is its own colour. Whole scene: 99 draw calls, 28k triangles. (Draw calls exceed the mesh
 count by five because the slab carries a material array, and three.js issues one call per geometry
-group.)
+group.) The two bezels are one mesh each and 960 triangles between them.
 
 Everything random is seeded (`mulberry32`, consumed once at build time in a fixed traversal order),
 so the city is identical on every reload. `Math.random()` is never called.
@@ -194,11 +237,18 @@ is carried entirely by the length of one horizontal spur, and that cue does not 
 日 and 時 do. Legibility here is a function of glyph *and* render size, and only the second one was
 negotiable.
 
-**11. Sign placement is solved against screen x, not world x.** `screenX = x·cos(yaw) + z·sin(yaw)`,
-so a back-row sign at z = −9.3 lands 2.9 units left of where its world x suggests. Every entry in
-`CITY_SIGNS` carries the screen x it actually hits, and they are spread across the frame rather
-than clustered. Two signs may share a screen x only if their screen *y* ranges are disjoint — the
-pair at −11.9 and −10.9 do, by nearly four units.
+**11. Sign placement is solved against screen position, and the layout table deliberately does not
+record it.** The projection shears everything, and the shear is easy to get backwards: an earlier
+version of `CITY_SIGNS` carried hand-computed screen x values with the z term's sign flipped, and
+every one of them was wrong by two to four units while the layout itself was perfectly fine. Wrong
+documentation is worse than none, so the numbers are gone and `npm run measure` prints the real
+screen footprint of every sign and bezel and fails if any two overlap. A sign standing on a
+bezelled building is exempt — that pair shares a footprint by construction.
+
+The footprints are convex **hulls**, not boxes, and that distinction is load-bearing: a pyramid
+bezel's screen box is mostly the empty triangle corners, so a box-against-box test reported it
+colliding with the 日時 sign it visibly clears. A collision check that cries wolf is one that gets
+ignored.
 
 **12. Every sign tops out below y = 11.6, which is not a coincidence.** That is the top of the
 scene's bounding box (tower 4's rooftop plant), and `DESIGN_W`/`DESIGN_H` are solved against that
@@ -222,8 +272,11 @@ Three values are less arbitrary than they look:
 - **Framing.** `DESIGN_W/H` and `CAM_TARGET` are measured, not derived by hand — an analytical
   estimate missed the roof cones, antenna masts and rooftop plant and under-reported the vertical
   extent by ~15%, which clipped the skyline at 16:9. Re-measure with `npm run measure` (or `?bounds`
-  in the browser) if the buildings, the slab or the tilt amplitude change. Current headroom is 5.8%
-  horizontal and 1.9% vertical, so the vertical is the one to watch.
+  in the browser) if the buildings, the slab or the tilt amplitude change. Current headroom is 6.5%
+  horizontal and 3.3% vertical, so the vertical is the one to watch. `measure` also solves the
+  corrected `CAM_TARGET` rather than just reporting that it is off — replacing b1's pitched roof
+  with the castle shrank the scene's bounding box (a cone rotated 45° has a surprisingly large AABB)
+  and knocked the centring out by 0.16, which is how the current value was derived.
 - **The sign ceiling.** A new sign must stay inside its host's roof footprint *and* under y = 11.6.
   The first keeps it from floating off the side of its building; the second keeps it out of the
   scene's bounding box, which is what the framing is solved against.

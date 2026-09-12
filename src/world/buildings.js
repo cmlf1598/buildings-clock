@@ -1,6 +1,8 @@
 import * as THREE from "three";
 import { MAT } from "../emissive/palette.js";
-import { TOWERS, FILLERS } from "./layout.js";
+import { TOWERS, FILLERS, coneRoof } from "./layout.js";
+import { CONE_ROOF } from "../config.js";
+import { castleSolid, castleWalls } from "./castleRoof.js";
 
 /**
  * Building bodies and roof details.
@@ -52,20 +54,17 @@ export function createBuildings(scene) {
     addBody(f);
 
     switch (f.roof) {
-      case "pitched": {
-        // A prism: a 4-sided cone rotated 45 degrees is a pyramid, but with
-        // radial segments 4 and a half-turn it makes a clean ridge roof.
-        const g = new THREE.CylinderGeometry(0, f.W * 0.78, 0.9, 4, 1);
-        const m = new THREE.Mesh(g, roofMat);
-        m.position.set(f.x, f.H + 0.45, f.z);
-        m.rotation.y = Math.PI / 4;
-        group.add(m);
-        break;
-      }
+      // Both are 4-sided cones turned 45 degrees; only the proportions differ.
+      // The dimensions come from CONE_ROOF rather than from literals here,
+      // because neonBezel.js traces the same shape and the two must agree.
+      case "pitched":
       case "pyramid": {
-        const g = new THREE.ConeGeometry(f.W * 0.72, 1.6, 4);
-        const m = new THREE.Mesh(g, roofMat);
-        m.position.set(f.x, f.H + 0.8, f.z);
+        const { r, h } = CONE_ROOF[f.roof];
+        const m = new THREE.Mesh(
+          new THREE.ConeGeometry(f.W * r, h, 4),
+          roofMat,
+        );
+        m.position.set(f.x, f.H + h / 2, f.z);
         m.rotation.y = Math.PI / 4;
         group.add(m);
         break;
@@ -104,6 +103,18 @@ export function createBuildings(scene) {
         bar(-0.22, 0.09, 0.62);
         bar(0.22, 0.09, 0.62);
         bar(0, 0.44, 0.1);
+        break;
+      }
+      case "castle": {
+        // Tiered tenshu roof. The shape is generated in castleRoof.js rather
+        // than modelled here, because the neon bezel has to trace the SAME
+        // lines - see neonBezel.js. No parapet: the eaves land straight on the
+        // wall head, the way the reference does.
+        const roof = new THREE.Mesh(castleSolid(f), roofMat);
+        group.add(roof);
+        for (const w of castleWalls(f)) {
+          addBox(bodyMat, w.x, w.y, w.z, w.w, w.h, w.d);
+        }
         break;
       }
       case "tank": {

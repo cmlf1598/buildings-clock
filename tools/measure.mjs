@@ -39,6 +39,8 @@ import { createBuildings } from "../src/world/buildings.js";
 import { createProps } from "../src/world/props.js";
 import { NeonSign } from "../src/world/neonSign.js";
 import { CitySigns } from "../src/world/citySigns.js";
+import { CITY_SIGNS, BEZELS } from "../src/world/layout.js";
+import { NeonBezels } from "../src/world/neonBezel.js";
 import { WindowField } from "../src/emissive/WindowField.js";
 
 const DEG = 180 / Math.PI;
@@ -48,7 +50,8 @@ createGround(scene);
 createBuildings(scene);
 createProps(scene);
 new NeonSign(scene);
-new CitySigns(scene);
+const citySigns = new CitySigns(scene);
+const bezels = new NeonBezels(scene);
 scene.add(new WindowField().mesh);
 scene.updateMatrixWorld(true);
 
@@ -138,20 +141,157 @@ for (const px of [box.min.x, box.max.x])
       a = Math.min(a, v.x); b = Math.max(b, v.x);
       c = Math.min(c, v.y); d = Math.max(d, v.y);
     }
+const offX = (a + b) / 2;
+const offY = (c + d) / 2;
 console.log(
   `\nat base angles        w ${(b - a).toFixed(2)}  h ${(d - c).toFixed(2)}` +
-    `   centring offset x ${((a + b) / 2).toFixed(2)} y ${((c + d) / 2).toFixed(2)}` +
-    `  (offsets should be ~0)`,
+    `   centring offset x ${offX.toFixed(2)} y ${offY.toFixed(2)}`,
+);
+
+// Solve the correction rather than just reporting the error. The offset is in
+// VIEW space, so it comes back to world space along the camera's own right and
+// up axes - which is why this works at any yaw and pitch with no special case.
+if (Math.abs(offX) > 0.02 || Math.abs(offY) > 0.02) {
+  const right = new THREE.Vector3().setFromMatrixColumn(cam.matrixWorld, 0);
+  const up = new THREE.Vector3().setFromMatrixColumn(cam.matrixWorld, 1);
+  const fixed = target
+    .clone()
+    .addScaledVector(right, offX)
+    .addScaledVector(up, offY);
+  console.log(
+    `off centre - CAM_TARGET should be ` +
+      `[${fixed.x.toFixed(2)}, ${fixed.y.toFixed(2)}, ${fixed.z.toFixed(2)}]`,
+  );
+} else {
+  console.log("centred");
+}
+
+// ---------------------------------------------------------------------------
+// Sign and bezel layout
+//
+// The invariant the placement table is actually solved against: no two lit
+// objects may overlap on screen. Screen position is a SHEAR of world position
+// and the shear is easy to get backwards by hand, so it is measured here
+// rather than reasoned about in a comment.
+// ---------------------------------------------------------------------------
+
+const lit = [
+  ...citySigns.signs.map((s, i) => [CITY_SIGNS[i].word, s.group, CITY_SIGNS[i].host]),
+  ...bezels.bezels.map((b, i) => [`bezel ${BEZELS[i].host}`, b.mesh, BEZELS[i].host]),
+];
+
+/**
+ * Screen footprint of one object: its projected vertices, reduced to a convex
+ * hull.
+ *
+ * An axis-aligned box is not good enough here. A pyramid bezel's screen box is
+ * mostly the empty triangle corners, so box-against-box reported it colliding
+ * with a sign it visibly clears - and a collision test that cries wolf is one
+ * that gets ignored. Hulls are tight enough to be believed.
+ */
+function footprint(obj) {
+  const pts = [];
+  const p = new THREE.Vector3();
+  obj.updateMatrixWorld(true);
+  obj.traverse((o) => {
+    if (!o.isMesh) return;
+    const attr = o.geometry.attributes.position;
+    for (let i = 0; i < attr.count; i++) {
+      p.fromBufferAttribute(attr, i)
+        .applyMatrix4(o.matrixWorld)
+        .applyMatrix4(cam.matrixWorldInverse);
+      pts.push([p.x, p.y]);
+    }
+  });
+  return hull(pts);
+}
+
+/** Andrew's monotone chain. */
+function hull(pts) {
+  const p = [...pts].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  if (p.length < 3) return p;
+  const cross = (o, a, b) =>
+    (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const half = (src) => {
+    const out = [];
+    for (const q of src) {
+      while (out.length >= 2 && cross(out.at(-2), out.at(-1), q) <= 0) out.pop();
+      out.push(q);
+    }
+    out.pop();
+    return out;
+  };
+  return [...half(p), ...half([...p].reverse())];
+}
+
+/** Separating-axis test on two convex polygons. */
+function overlaps(a, b) {
+  for (const poly of [a, b]) {
+    for (let i = 0; i < poly.length; i++) {
+      const q = poly[(i + 1) % poly.length];
+      const ax = -(q[1] - poly[i][1]);
+      const ay = q[0] - poly[i][0];
+      let aMin = Infinity, aMax = -Infinity, bMin = Infinity, bMax = -Infinity;
+      for (const [x, y] of a) {
+        const d = x * ax + y * ay;
+        aMin = Math.min(aMin, d); aMax = Math.max(aMax, d);
+      }
+      for (const [x, y] of b) {
+        const d = x * ax + y * ay;
+        bMin = Math.min(bMin, d); bMax = Math.max(bMax, d);
+      }
+      if (aMax <= bMin || bMax <= aMin) return false;
+    }
+  }
+  return true;
+}
+
+const boxes = lit.map(([name, obj, host]) => {
+  const poly = footprint(obj);
+  return {
+    name,
+    host,
+    poly,
+    x0: Math.min(...poly.map((q) => q[0])),
+    x1: Math.max(...poly.map((q) => q[0])),
+    y0: Math.min(...poly.map((q) => q[1])),
+    y1: Math.max(...poly.map((q) => q[1])),
+  };
+});
+
+console.log("\nlit objects, on screen (world units from frame centre):");
+for (const b of [...boxes].sort((p, q) => p.x0 - q.x0)) {
+  console.log(
+    `  ${b.name.padEnd(12)} x [${b.x0.toFixed(2).padStart(6)},` +
+      `${b.x1.toFixed(2).padStart(6)}]   y [${b.y0.toFixed(2).padStart(6)},` +
+      `${b.y1.toFixed(2).padStart(6)}]`,
+  );
+}
+
+const clashes = [];
+for (let i = 0; i < boxes.length; i++) {
+  for (let j = i + 1; j < boxes.length; j++) {
+    const p = boxes[i], q = boxes[j];
+    // A sign STANDING on a bezelled building shares its footprint with the
+    // bezel by construction. That is the design, not a collision.
+    if (p.host && p.host === q.host) continue;
+    if (overlaps(p.poly, q.poly)) clashes.push(`${p.name} / ${q.name}`);
+  }
+}
+console.log(
+  clashes.length
+    ? `\nOVERLAPPING ON SCREEN:\n  ${clashes.join("\n  ")}`
+    : "\nno two lit objects overlap on screen",
 );
 
 // The design box must CONTAIN the swept extent or the diorama gets cropped.
 // The headroom above that is margin for UnrealBloomPass, which samples with
 // clamp-to-edge and smears a bright object near the border into a streak along
 // it - so a sign that merely fits is not yet safe.
-const fail = w > DESIGN_W || h > DESIGN_H;
+const cropping = w > DESIGN_W || h > DESIGN_H;
 console.log(
-  fail
+  cropping
     ? "\nCROPPING - the scene no longer fits the design box, update config.js"
     : "\nok - the scene fits inside the design box",
 );
-process.exit(fail ? 1 : 0);
+process.exit(cropping || clashes.length ? 1 : 0);

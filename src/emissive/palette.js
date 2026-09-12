@@ -99,11 +99,17 @@ export const SIGN_DIM = {
 
 export const CITY_HUE = {
   amber: 0xffb347,
+  teal: 0x5fe0d4, // the castle's roof tiles, straight off the reference
   magenta: 0xff8fd0,
   cyan: 0x4fe3ff,
   violet: 0xc9a6ff,
   jade: 0x5cffb8,
 };
+
+// A bezel is metres of continuous tube rather than a few short strokes, so it
+// puts far more lit area on screen for the same luma. It is solved BELOW the
+// far signs for that reason: matched by luma it would out-glow them badly.
+export const CITY_BEZEL_LUMA = 0.5;
 
 export const CITY_INK_NEAR = 0.72;
 export const CITY_INK_FAR = 0.6;

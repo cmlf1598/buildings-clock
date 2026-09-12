@@ -2,6 +2,12 @@
  * Renders the scene to a PNG without a browser.
  *
  *     node tools/preview.mjs out.png [width] [height]
+ *     T=23:59 node tools/preview.mjs out.png          # a different reading
+ *     TGT=-4.5,7.5,-10.8 FH=8 node tools/preview.mjs out.png   # zoom in
+ *
+ * TGT and FH move and tighten the camera for inspecting one detail. They do
+ * NOT change the scene - the shipped framing is whatever config.js says, and
+ * these only exist so a roofline can be looked at closely.
  *
  * A z-buffered software rasteriser over the real scene graph. It is not a
  * substitute for looking at the running app - it approximates the lighting and
@@ -33,6 +39,7 @@ import { createBuildings } from "../src/world/buildings.js";
 import { createProps } from "../src/world/props.js";
 import { NeonSign } from "../src/world/neonSign.js";
 import { CitySigns } from "../src/world/citySigns.js";
+import { NeonBezels } from "../src/world/neonBezel.js";
 import { WindowField } from "../src/emissive/WindowField.js";
 import { Animator } from "../src/emissive/animator.js";
 import { TOWERS, DIGIT_SLOTS } from "../src/world/layout.js";
@@ -52,6 +59,7 @@ const amPm = new NeonSign(scene);
 amPm.setPM(false); // "am" lit, matching a fresh morning load
 amPm.step(10); // settle the cross-fade instead of catching it mid-fade
 new CitySigns(scene);
+new NeonBezels(scene);
 const field = new WindowField();
 scene.add(field.mesh);
 
@@ -80,7 +88,9 @@ field.flush();
 scene.updateMatrixWorld(true);
 
 // --- camera ----------------------------------------------------------------
-const target = new THREE.Vector3(...CAM_TARGET);
+const target = new THREE.Vector3(
+  ...(process.env.TGT ? process.env.TGT.split(",").map(Number) : CAM_TARGET),
+);
 const cam = new THREE.Camera();
 const cp = Math.cos(BASE_PITCH);
 cam.position.set(
@@ -93,7 +103,9 @@ cam.updateMatrixWorld(true);
 const view = cam.matrixWorldInverse;
 
 const aspect = W / H;
-const fh = Math.max(DESIGN_H, DESIGN_W / aspect);
+const fh = process.env.FH
+  ? Number(process.env.FH)
+  : Math.max(DESIGN_H, DESIGN_W / aspect);
 const fw = fh * aspect;
 
 // --- lighting ---------------------------------------------------------------

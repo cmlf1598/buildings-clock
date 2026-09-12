@@ -11,7 +11,7 @@ import {
 import { KANJI, WORDS, chars } from "../data/kanjiGlyphs.js";
 import { CITY_SIGNS, BUILDINGS } from "./layout.js";
 import { roundedRectPoints, tubeFrom, densify } from "./tube.js";
-import { hash01 } from "../util/rng.js";
+import { breathe, flicker, lifeFor } from "../emissive/neonLife.js";
 import {
   PARAPET_T,
   SIGN_X,
@@ -27,11 +27,7 @@ import {
   CITY_LEG_H,
   CITY_LEG_W,
   CITY_BRACKET_T,
-  CITY_BREATHE,
-  CITY_BREATHE_T,
   CITY_FLICKER_SIGN,
-  CITY_FLICKER_PERIOD,
-  CITY_FLICKER_LEN,
   CITY_BLADE_X,
   CITY_BLADE_INNER,
   CITY_BLADE_EM,
@@ -185,27 +181,15 @@ class CitySign {
     this.group = group;
 
     // Seeded, so the city breathes identically on every reload.
-    this.period = CITY_BREATHE_T[index % CITY_BREATHE_T.length];
-    this.phase = hash01(index * 977) * Math.PI * 2;
+    Object.assign(this, lifeFor(index));
     this.faulty = spec.word === CITY_FLICKER_SIGN;
     this.level = 1;
   }
 
-  /**
-   * Slow breathe, plus - on exactly one sign - a tube that is on its way out.
-   * The flicker is gated to a short window on a long period so it reads as
-   * texture. A sign that strobes continuously pulls the eye off the clock,
-   * which is the one thing the whole palette is arranged to prevent.
-   */
+  /** Slow breathe, plus - on exactly one sign - a tube on its way out. */
   step(t) {
-    let level = 1 + CITY_BREATHE * Math.sin((t / this.period) * Math.PI * 2 + this.phase);
-
-    if (this.faulty) {
-      const phase = t % CITY_FLICKER_PERIOD;
-      if (phase < CITY_FLICKER_LEN) {
-        level *= hash01(Math.floor(t * 19)) < 0.45 ? 0.2 : 1;
-      }
-    }
+    let level = breathe(t, this.period, this.phase);
+    if (this.faulty) level *= flicker(t);
 
     if (Math.abs(level - this.level) < 0.002) return;
     this.level = level;

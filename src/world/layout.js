@@ -11,6 +11,7 @@
  */
 
 import {
+  CONE_ROOF,
   COL_PITCH,
   ROW_PITCH,
   ROW_Y0,
@@ -43,6 +44,24 @@ export const colOffset = (c, cols) => (c - (cols - 1) / 2) * COL_PITCH;
 /** How many ambient columns fit on a face of the given width. */
 export const colsFor = (width) =>
   Math.max(2, Math.floor((width - 0.6) / COL_PITCH));
+
+/**
+ * The square base and apex of a cone roof, in world units.
+ *
+ * Both cone roofs are turned 45 degrees, which lands their four base vertices
+ * on the axes - so the base is an axis-aligned square of half-extent
+ * r * W * cos(45), not r * W. Getting that factor wrong puts a bezel visibly
+ * inside or outside the roof it is meant to be tracing.
+ */
+export function coneRoof(b) {
+  const spec = CONE_ROOF[b.roof];
+  if (!spec) return null;
+  return {
+    half: b.W * spec.r * Math.SQRT1_2,
+    baseY: b.H,
+    apexY: b.H + spec.h,
+  };
+}
 
 export const isSeparatorRow = (r) => SEPARATOR_ROWS.includes(r);
 export const isDigitRow = (r) => r >= DIGIT_ROW_BOTTOM && r <= DIGIT_ROW_TOP;
@@ -125,7 +144,9 @@ export const FILLERS = [
   // screen, so every one of them clears the tallest tower and reads as a
   // distinct silhouette against the sky.
   filler("b0", -9.21, -10.5, 3.2, 2.8, 6.6, "flat"),
-  filler("b1", -4.48, -10.8, 2.6, 2.6, 5.2, "pitched"),
+  // The castle. Raised from 5.2 so its lowest eave clears the 今日 sign
+  // standing on tower 1 in front of it - at 5.2 the two crossed on screen.
+  filler("b1", -4.48, -10.8, 2.6, 2.6, 6.4, "castle"),
   filler("b2", 0.78, -10.5, 3.0, 3.0, 6.9, "flat"),
   filler("b3", 6.04, -10.6, 2.8, 2.8, 5.4, "flat", { antenna: true }),
   filler("b4", 11.30, -10.4, 2.8, 2.8, 6.0, "tank"),
@@ -138,6 +159,25 @@ export const BUILDINGS = Object.fromEntries([
 ]);
 
 // ---------------------------------------------------------------------------
+// Neon bezels
+//
+// Tube run along a building's own edges. A bezel only pays for itself on a
+// building whose top is clear of the clock towers, which rules out most of the
+// fill. f4's pyramid clears tower 5 and sits right behind it; b2's roofline
+// clears tower 2. One traces a roof and one traces a box, so the two read as
+// the same effect applied to different architecture rather than a special case.
+// ---------------------------------------------------------------------------
+
+export const BEZELS = [
+  // The pyramid standing behind the minutes-ones tower. It reads better lit
+  // than the castle did: a pyramid is four straight edges to a point, so the
+  // tube states the whole form, where the castle's tiers gave the tube so much
+  // to say that the solid underneath stopped being visible at all.
+  { host: "f4", kind: "pyramid", hue: "teal" },
+  { host: "b2", kind: "box", hue: "amber" },
+];
+
+// ---------------------------------------------------------------------------
 // City signs
 //
 // Two mounts. "roof" stands on a host building's parapet; "blade" hangs off a
@@ -145,13 +185,15 @@ export const BUILDINGS = Object.fromEntries([
 // host rather than carrying an absolute y, so a sign follows its building if
 // the height ever changes.
 //
-// Placement is solved against SCREEN x, not world x, because the projection
-// shears everything: screenX = x*cos(yaw) + z*sin(yaw), so a back-row sign at
-// z = -9.3 slides 2.9 units LEFT of where its world x suggests. The comment on
-// each entry is the screen x it actually lands on, and they are spread across
-// the frame rather than clustered. Two signs may share a screen x only if
-// their screen y ranges are disjoint - the pair at -11.9 and -10.9 do, by
-// nearly four units.
+// Placement is solved against SCREEN position, not world position. The
+// projection shears everything - and the shear is easy to get backwards, so do
+// not do it in your head: an earlier version of this comment carried
+// hand-computed screen x values with the z term's sign flipped, and every one
+// of them was wrong by two to four units while the layout itself was fine.
+//
+// `npm run measure` prints the real screen box of every sign and bezel and
+// fails if any two overlap in BOTH axes. That is the actual invariant; trust
+// it rather than arithmetic done here.
 //
 // Every sign also has to stay inside its host's roof footprint and under
 // y = 11.6, which is the top of the scene's bounding box (tower 4's rooftop
@@ -167,7 +209,6 @@ export const CITY_SIGNS = [
     word: "時分秒",
     mount: "blade",
     dir: "v",
-    screenX: -11.92,
     frame: "cyan",
     ink: "amber",
     near: true,
@@ -180,7 +221,6 @@ export const CITY_SIGNS = [
     mount: "blade",
     side: "right",
     dir: "v",
-    screenX: 12.04,
     frame: "magenta",
     ink: "magenta",
     near: true,
@@ -196,7 +236,6 @@ export const CITY_SIGNS = [
     z: -9.3,
     em: 1.15,
     dir: "v",
-    screenX: -10.86,
     frame: "magenta",
     ink: "amber",
   },
@@ -211,7 +250,6 @@ export const CITY_SIGNS = [
     z: 0.95,
     em: 1.0,
     dir: "h",
-    screenX: -8.83,
     frame: "cyan",
     ink: "cyan",
     near: true,
@@ -227,7 +265,6 @@ export const CITY_SIGNS = [
     z: -9.2,
     em: 1.1,
     dir: "v",
-    screenX: -2.27,
     ink: "violet",
   },
 
@@ -246,7 +283,6 @@ export const CITY_SIGNS = [
     z: -9.5,
     em: 1.05,
     dir: "v",
-    screenX: 2.29,
     ink: "jade",
   },
 
@@ -260,7 +296,6 @@ export const CITY_SIGNS = [
     z: -9.3,
     em: 0.92,
     dir: "h",
-    screenX: 7.83,
     frame: "amber",
     ink: "magenta",
   },

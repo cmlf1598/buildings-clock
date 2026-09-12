@@ -18,6 +18,7 @@ import { createGround } from "./world/ground.js";
 import { createProps } from "./world/props.js";
 import { NeonSign } from "./world/neonSign.js";
 import { CitySigns } from "./world/citySigns.js";
+import { NeonBezels } from "./world/neonBezel.js";
 import { TOWERS, DIGIT_SLOTS } from "./world/layout.js";
 
 import { WindowField } from "./emissive/WindowField.js";
@@ -37,6 +38,7 @@ createBuildings(scene);
 createProps(scene);
 const sign = new NeonSign(scene);
 const citySigns = new CitySigns(scene);
+const bezels = new NeonBezels(scene);
 
 const field = new WindowField();
 scene.add(field.mesh);
@@ -161,6 +163,7 @@ function animate(timestamp) {
   animator.step(dt);
   sign.step(dt);
   citySigns.step(t);
+  bezels.step(t);
   field.flush();
 
   composer.render(); // NOT renderer.render()
