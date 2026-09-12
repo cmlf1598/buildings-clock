@@ -11,6 +11,13 @@
  */
 
 import {
+  BILLBOARD_EM,
+  BILLBOARD_GAP,
+  BILLBOARD_PAD,
+  BILLBOARD_LEG_H,
+  BILLBOARD_LAMP_DROP,
+  BILLBOARD_LAMP_OUT,
+  PARAPET_T,
   CONE_ROOF,
   COL_PITCH,
   ROW_PITCH,
@@ -159,6 +166,54 @@ export const BUILDINGS = Object.fromEntries([
 ]);
 
 // ---------------------------------------------------------------------------
+// The painted billboard
+//
+// Sits on the hours-ones tower, the second digit. Its size comes from its
+// CONTENT, like every other sign here, and the lamp positions come off the
+// board - so billboard.js, windowLayout.js and lights.js all build from one
+// description rather than three guesses that drift apart.
+//
+// The height matters. Tower 2's parapet is at 10.16 and the scene's bounding
+// box tops out at 11.6, so the whole assembly has 1.44 units to live in before
+// it grows the box the framing is solved against. That is why the board is
+// short and wide rather than tall.
+// ---------------------------------------------------------------------------
+
+export const BILLBOARD = {
+  host: "t1", // hours, ones
+  word: "一日一生", // ichinichi-isshou: one day, one lifetime
+  z: 1.0, // toward the front edge of the roof, clear of the rooftop plant
+};
+
+export function billboardParts() {
+  const host = BUILDINGS[BILLBOARD.host];
+  const n = [...BILLBOARD.word].length;
+  const span = n * BILLBOARD_EM + (n - 1) * BILLBOARD_GAP;
+  const w = span + BILLBOARD_PAD * 2;
+  const h = BILLBOARD_EM + BILLBOARD_PAD * 2;
+  const deck = host.H + PARAPET_T;
+  const y = deck + BILLBOARD_LEG_H + h / 2;
+
+  return {
+    host,
+    w,
+    h,
+    deck,
+    x: host.x,
+    y,
+    z: BILLBOARD.z,
+    em: BILLBOARD_EM,
+    span,
+    // Two floodlights under the board, inset from its ends.
+    lamps: [-w * 0.27, w * 0.27].map((dx) => ({
+      x: host.x + dx,
+      y: y - h / 2 - BILLBOARD_LAMP_DROP,
+      z: BILLBOARD.z + BILLBOARD_LAMP_OUT,
+    })),
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Neon bezels
 //
 // Tube run along a building's own edges. A bezel only pays for itself on a
@@ -209,6 +264,7 @@ export const CITY_SIGNS = [
     word: "時分秒",
     mount: "blade",
     dir: "v",
+    flicker: true,
     frame: "cyan",
     ink: "amber",
     near: true,
@@ -231,6 +287,7 @@ export const CITY_SIGNS = [
   {
     word: "時計",
     mount: "roof",
+    flicker: true,
     host: "b0",
     x: -8.4,
     z: -9.3,
@@ -268,7 +325,8 @@ export const CITY_SIGNS = [
     ink: "violet",
   },
 
-  // "Date and time". This is the one with the failing tube.
+  // "Date and time". One of the three with a failing tube - see `flicker`
+  // below, and neonLife.js for why each one needs its own fault clock.
   //
   // It used to read 正午, "noon", until the preview showed the problem: at the
   // ~20px per character a back-row sign actually gets, 正 is indistinguishable
@@ -278,6 +336,7 @@ export const CITY_SIGNS = [
   {
     word: "日時",
     mount: "roof",
+    flicker: true,
     host: "b3",
     x: 5.5,
     z: -9.5,

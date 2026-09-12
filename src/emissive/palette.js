@@ -133,6 +133,11 @@ export const MAT = {
   slabSide: 0x2a3145,
   road: 0x151a25,
   panel: 0x1a1d24,
+  // Solved, not picked: 0.31 luma on a +Z face under the night rig. White paint
+  // at night is not white - see the note above BILLBOARD_EM in config.js.
+  billboard: 0xbdb6a8,
+  billboardInk: 0x15171c, // near black, but not a hole
+  billboardFrame: 0x2f333d,
   prop: 0x2a3143,
 };
 

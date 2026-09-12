@@ -72,13 +72,6 @@ export const COLON = (() => {
   return out;
 })();
 
-/** Flat indices of the colon's lit cells — 8 of them. */
-export const COLON_LIT = (() => {
-  const lit = [];
-  for (let i = 0; i < COLON.length; i++) if (COLON[i]) lit.push(i);
-  return Int32Array.from(lit);
-})();
-
 /** ASCII art of every glyph, for eyeballing in the console. */
 export function renderAll() {
   const keys = Object.keys(RAW);

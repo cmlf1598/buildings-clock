@@ -26,6 +26,25 @@
  */
 
 export const KANJI = {
+  // One. A single stroke, and the only glyph here that is one stroke.
+  一: {
+    gloss: "one",
+    strokes: [[[0.07, 0.50], [0.93, 0.50]]],
+  },
+
+  // To live. The long stem runs the full height and everything crosses it; the
+  // bottom bar is the widest stroke, which is what keeps it upright.
+  生: {
+    gloss: "life, to live",
+    strokes: [
+      [[0.54, 0.97], [0.12, 0.70]],
+      [[0.16, 0.72], [0.82, 0.72]],
+      [[0.08, 0.41], [0.88, 0.41]],
+      [[0.52, 0.92], [0.52, 0.06]],
+      [[0.04, 0.06], [0.96, 0.06]],
+    ],
+  },
+
   // Sun, day. Narrow and tall; the middle bar sits just above centre.
   日: {
     gloss: "sun, day",
@@ -144,6 +163,9 @@ export const KANJI = {
  */
 export const WORDS = {
   時計: { romaji: "tokei", means: "clock" },
+  // A Zen saying: one day, one lifetime - live each day as if it were the
+  // whole of your life. The painted board on tower 2 carries this one.
+  一日一生: { romaji: "ichinichi-isshou", means: "one day, one lifetime" },
   今日: { romaji: "kyou", means: "today" },
   日時: { romaji: "nichiji", means: "date and time" },
   日月: { romaji: "jitsugetsu", means: "sun and moon; the passing of time" },

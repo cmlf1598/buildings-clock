@@ -14,6 +14,7 @@ import { createLights } from "./core/lights.js";
 import { createComposer, resizeComposer } from "./core/composer.js";
 
 import { createBuildings } from "./world/buildings.js";
+import { createBillboard } from "./world/billboard.js";
 import { createGround } from "./world/ground.js";
 import { createProps } from "./world/props.js";
 import { NeonSign } from "./world/neonSign.js";
@@ -37,6 +38,7 @@ createLights(scene);
 
 createGround(scene);
 createBuildings(scene);
+createBillboard(scene);
 createProps(scene);
 const sign = new NeonSign(scene);
 const citySigns = new CitySigns(scene);
@@ -57,7 +59,11 @@ for (const slot of DIGIT_SLOTS) {
   prevGlyph[slot] = new Uint8Array(GLYPH_W * GLYPH_H);
 }
 
-// The colon is static content - it is lit once and then pulsed every frame.
+// The colon is lit once and then left alone. It used to pulse once a second,
+// which put the only moving thing in the scene dead centre and made it compete
+// with the readout it separates. The seconds are carried by the window swap on
+// the digit towers now (emissive/secondTick.js), so the colon has no job left
+// but to sit there at digit level.
 animator.applyGlyph(
   field.colonMap,
   COLON,
@@ -162,7 +168,6 @@ function animate(timestamp) {
   const reading = timeSource.poll();
   if (reading) applyReading(reading);
 
-  field.pulseColon(t);
   field.pulseBeacons(t);
   rooms.step(t);
   secondTick.step(t);

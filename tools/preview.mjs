@@ -17,6 +17,13 @@
  * says, does it overlap another one on screen, does a building occlude it,
  * does anything fall off the slab.
  *
+ * Known difference: this shades FLAT, one value per triangle from its first
+ * vertex. three's MeshLambertMaterial shades per fragment (the lighting
+ * includes sit in meshlambert's fragment stage), so a point light close to a
+ * large face - the billboard's floodlights, say - shows a hard diagonal seam
+ * here and a smooth gradient in the browser. Judge falloff by the numbers, not
+ * by this.
+ *
  * Orthographic camera, so projection is just a scale of view-space x and y.
  */
 
@@ -37,6 +44,7 @@ import {
 import { createLights } from "../src/core/lights.js";
 import { createGround } from "../src/world/ground.js";
 import { createBuildings } from "../src/world/buildings.js";
+import { createBillboard } from "../src/world/billboard.js";
 import { createProps } from "../src/world/props.js";
 import { NeonSign } from "../src/world/neonSign.js";
 import { CitySigns } from "../src/world/citySigns.js";
@@ -57,6 +65,7 @@ const scene = new THREE.Scene();
 createLights(scene);
 createGround(scene);
 createBuildings(scene);
+createBillboard(scene);
 createProps(scene);
 const amPm = new NeonSign(scene);
 amPm.setPM(false); // "am" lit, matching a fresh morning load
@@ -100,7 +109,6 @@ if (RT > 0) {
 }
 
 animator.step(10); // run every fade straight to its endpoint
-field.pulseColon(0);
 field.flush();
 scene.updateMatrixWorld(true);
 

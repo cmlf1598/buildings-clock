@@ -36,10 +36,11 @@ import {
 } from "../src/config.js";
 import { createGround } from "../src/world/ground.js";
 import { createBuildings } from "../src/world/buildings.js";
+import { createBillboard } from "../src/world/billboard.js";
 import { createProps } from "../src/world/props.js";
 import { NeonSign } from "../src/world/neonSign.js";
 import { CitySigns } from "../src/world/citySigns.js";
-import { CITY_SIGNS, BEZELS } from "../src/world/layout.js";
+import { CITY_SIGNS, BEZELS, BILLBOARD } from "../src/world/layout.js";
 import { NeonBezels } from "../src/world/neonBezel.js";
 import { WindowField } from "../src/emissive/WindowField.js";
 
@@ -48,6 +49,7 @@ const DEG = 180 / Math.PI;
 const scene = new THREE.Scene();
 createGround(scene);
 createBuildings(scene);
+const billboard = createBillboard(scene);
 createProps(scene);
 new NeonSign(scene);
 const citySigns = new CitySigns(scene);
@@ -178,6 +180,9 @@ if (Math.abs(offX) > 0.02 || Math.abs(offY) > 0.02) {
 const lit = [
   ...citySigns.signs.map((s, i) => [CITY_SIGNS[i].word, s.group, CITY_SIGNS[i].host]),
   ...bezels.bezels.map((b, i) => [`bezel ${BEZELS[i].host}`, b.mesh, BEZELS[i].host]),
+  // The painted board is not emissive, but it is the brightest surface in the
+  // city and collides with a neon sign just as badly.
+  ["billboard", billboard.group, BILLBOARD.host],
 ];
 
 /**

@@ -4,8 +4,8 @@ A night city on a floating diorama slab, seen through an orthographic camera. Fi
 front row are a dot-matrix clock: lit windows spell the time. A neon blade sign on the last tower
 shows AM/PM in pink script inside a cyan tube frame, seven kanji signs stand on the rooftops and
 hang off the flanks, two buildings at the back are outlined in neon, one of them under a tiered
-castle roof, and the camera leans toward your pointer and drifts on its own when you leave it
-alone.
+castle roof, a floodlit painted board stands on the hours-ones tower, and the camera leans toward
+your pointer and drifts on its own when you leave it alone.
 
 ```
 npm install
@@ -20,7 +20,7 @@ Then open the printed URL. `npm run build` / `npm run preview` for production.
 |---|---|
 | 1 | hours, tens — **no digit at all for 1–9 o'clock**, just its ordinary ambient windows. Carries the 時分秒 blade on its outer flank and 今日 on its roof |
 | 2 | hours, ones |
-| 3 | the colon, pulsing once per second |
+| 3 | the colon, lit steady at digit level |
 | 4 | minutes, tens |
 | 5 | minutes, ones, with the neon AM/PM sign hanging off its flank |
 
@@ -28,7 +28,9 @@ Then open the printed URL. `npm run build` / `npm run preview` for production.
 
 **The seconds are the city itself.** Once a second, three or four ambient windows on the digit
 towers' front faces come on and the same number go off — see [The second hand](#the-second-hand).
-Together with the colon's pulse, which peaks on the same beat, that is the scene's second hand.
+That is the *only* thing marking seconds. The colon used to pulse on the same beat and no longer
+does: two indicators for one quantity is one too many when the second of them sits dead centre, and
+the moving one took the eye every time.
 
 Behind the readout the city keeps its own hours: ordinary windows switch themselves on and off at
 random, about **0.6 changes a second** across the whole block. See [Room life](#room-life).
@@ -56,7 +58,7 @@ Simulated over an hour it holds at 18–19%.
 
 Two things it must not touch, both of which would take a while to debug if it did:
 
-- **Digit cells** belong to the glyph animator, and the colon and beacons are written directly every
+- **Digit cells** belong to the glyph animator, and the rooftop beacons are written directly every
   frame. Only `field.rooms` is eligible.
 - **The separator rows** are ambient windows and dark, but dark *on purpose* — they letterbox the
   digit band away from the ordinary windows. `windowLayout` builds them through plain `push()` so
@@ -81,12 +83,10 @@ recycles the lit set roughly every eight seconds.
 
 **Where.** Only ambient windows on the front faces of the four towers that carry digits. The digit
 band sits between them with a dark separator row above and below, so the movement frames the
-numerals and never touches them. The colon tower is excluded and keeps the slow room life — it
-already ticks in its own right.
+numerals and never touches them. The colon tower is excluded and keeps the slow room life.
 
-**When.** On each whole second of *elapsed* time, which is also where the colon's pulse peaks, so
-the two land on the same beat. Elapsed time freezes with a backgrounded tab, so coming back to one
-does not fire every missed second at once.
+**When.** On each whole second of *elapsed* time. Elapsed time freezes with a backgrounded tab, so
+coming back to one does not fire every missed second at once.
 
 Those 125 windows are deliberately kept **out** of `RoomLife`. Two systems driving one window would
 disagree about whether it is lit, and whichever held the stale belief would fight the other every
@@ -116,6 +116,21 @@ The 時分秒 blade is a deliberate mirror of the AM/PM sign at the other end: s
 bracket line, same construction. The two of them bracket the readout, and the left one names the
 units the digits are counting in.
 
+**Three of them have a tube on its way out** — 時分秒, 時計 and 日時, marked `flicker: true` in the
+`CITY_SIGNS` table. Each dips for `CITY_FLICKER_LEN` (0.38s) out of a cycle near
+`CITY_FLICKER_PERIOD` (7.4s), so any one is misbehaving about 5% of the time.
+
+The cycles are deliberately **scattered** rather than shared, and that is the part not to tidy up.
+Three tubes on one period dip in unison, which reads as the whole block browning out rather than as
+three separate tubes failing. Each gets its own period (±28%), its own offset, and its own seed for
+the stutter *during* a dropout — without the last one they would blink the same irregular rhythm at
+three different times, which is its own kind of wrong. Measured over five minutes: some sign is
+dipping 13% of the time, but two coincide only 0.9%.
+
+The seeded tables hash `index + 1`, never `index`, because `hash01(0)` is exactly 0 — index 0 would
+otherwise land on the extreme of every range it asks for, and index 0 is the blade standing next to
+the clock.
+
 **They are built as strokes, not as letterforms.** A kanji *is* a stroke sequence, so it maps onto
 bent tube with nothing lost — which is the same argument `scriptGlyphs.js` makes for the script
 "am"/"pm", only more so. Each character in `data/kanjiGlyphs.js` is a list of polylines in a unit
@@ -129,6 +144,35 @@ already collinear with its neighbours; the straights then stay straight and only
 before a turn bends. That leaves a fillet of a known, small radius on every corner — which is what
 a tube bender actually produces, and why the corners read as neither mitred nor melted. Do not
 pre-round the stroke data by hand; you would be applying the same fillet twice.
+
+## The painted board
+
+One sign in the city is not neon. A flat board stands on the hours-ones tower reading **一日一生**
+(*ichinichi-isshō*) — a Zen saying, "one day, one lifetime": live each day as if it were the whole
+of your life. Black characters on white, floodlit from below by two lamps.
+
+**Being lit rather than emissive is the whole point.** Every other lit thing here is an unlit
+`MeshBasicMaterial` carrying an HDR colour — it *is* its own brightness. This is
+`MeshLambertMaterial`: it has an albedo and waits to be lit, which is what makes it read as an older
+kind of signage sitting among the tubes.
+
+It also means **it cannot actually be white.** A true white panel resolves to luma 0.67 under the
+night rig — past the 0.58 bloom threshold — and glows like a lightbox, the exact thing a painted
+board is not. `MAT.billboard` is solved to **0.31** instead: seven times brighter than any building
+face, which reads as white paint, with room left for the lamps.
+
+**The floodlights are solved, not placed.** A point light this close to a panel is all hot spot: the
+first standoff tried (0.16 below, 0.3 in front, intensity 1.1) peaked the board at luma **3.1** —
+five times the threshold, two glaring blobs where the wash should be. The board can only stand 0.24
+clear of the parapet, so the lamps cannot simply drop further away; the intensity had to come down
+with the standoff. The shipped values land the panel at **0.52 peak** with the bottom 1.65× the top:
+floodlighting that stops short of glowing.
+
+The characters are the same stroke data as the neon signs, swept through the same `wordTubes`, with
+a tube nearly twice as fat relative to the character — a brush is not a 12mm tube, and at that
+weight the strokes read as painted rather than as glass that happens to be off. The lamps' own glow
+is not part of the board: those are two quads in `WindowField`, so they cost no draw call and bloom
+with every other light in the city.
 
 ## The bezels, and the castle
 
@@ -232,9 +276,10 @@ src/
   world/tube.js      neon tube sweeping, shared by every lit sign and bezel
   world/neonSign.js  the AM/PM blade
   world/citySigns.js the seven kanji signs
+  world/billboard.js the one painted, floodlit sign
   world/neonBezel.js buildings outlined in tube
   world/castleRoof.js  the generated tenshu roof
-  emissive/neonLife.js breathing and the one failing tube
+  emissive/neonLife.js breathing and the failing tubes
   emissive/roomLife.js rooms switching themselves on and off
   emissive/secondTick.js the once-a-second window swap
   emissive/          the instanced light field, palette, animator
@@ -259,8 +304,8 @@ npm run preview   # what does it look like?
 **A single InstancedMesh carries every glowing window.** `WindowField` (~1440 unit quads) is every
 facade window, streetlamp, car light and rooftop beacon — one draw call. It uses
 `MeshBasicMaterial` with a white base colour so `instanceColor` *is* the output, and brightness is
-just a per-instance multiplier, which is what makes the digit fades and the colon pulse the same
-mechanism.
+just a per-instance multiplier, which is what makes the digit fades, the room toggles and the
+second-hand swap all the same mechanism.
 
 **The neon sign is real tube geometry**, not a texture or a dot matrix: `TubeGeometry` swept along
 hand-authored centrelines in `data/scriptGlyphs.js`, because neon *is* bent tube and nothing else

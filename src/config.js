@@ -175,9 +175,16 @@ export const CITY_BREATHE_T = [13.7, 19.3, 23.1]; // seconds; mutually coprime-i
 
 // One tube in the city is failing, because one always is. Kept to a single
 // sign and a long duty cycle so it reads as texture rather than a strobe.
-export const CITY_FLICKER_SIGN = "日時"; // the "date and time" sign
+// WHICH signs have a failing tube is per-sign, in the CITY_SIGNS table. These
+// are only the shape of the fault.
+//
+// The period is a BASE. Each faulty sign scatters around it, because three
+// tubes sharing one period would dip in unison and read as the whole block
+// browning out rather than as three separate tubes on their way out.
 export const CITY_FLICKER_PERIOD = 7.4;
+export const CITY_FLICKER_SPREAD = 0.28; // +/- fraction, so 5.3s to 9.5s
 export const CITY_FLICKER_LEN = 0.38; // seconds of misbehaviour per period
+export const CITY_FLICKER_DIP = 0.2; // level during a dropout
 
 // The left-hand blade, mounted on tower 1 the way the AM/PM sign is mounted on
 // tower 5. Mirrored deliberately: the two blades bracket the whole readout.
@@ -286,6 +293,51 @@ export const MOON_INTENSITY = 2.5;
 export const MOON_DIR = [-9, 14, 6];
 
 // ---------------------------------------------------------------------------
+// The painted billboard
+//
+// The one sign in the city that is not neon. It is a flat board with black
+// characters, floodlit from below - so unlike everything else here it is LIT
+// rather than emissive, and that is the whole reason it reads as a different
+// era of signage sitting among the tubes.
+//
+// Being lit is also what constrains it. A genuinely white panel comes out at
+// luma 0.67 under this rig, past the 0.58 bloom threshold, and glows like a
+// lightbox - which is exactly what it must not look like. MAT.billboard is
+// solved to 0.31 instead: seven times brighter than any building face, so it
+// still reads as white paint, with room left for the lamps to lift its lower
+// half without crossing over.
+// ---------------------------------------------------------------------------
+
+export const BILLBOARD_EM = 0.52; // character cell
+export const BILLBOARD_GAP = 0.07;
+export const BILLBOARD_PAD = 0.2; // board edge to the nearest character
+export const BILLBOARD_D = 0.1; // board thickness
+export const BILLBOARD_FRAME = 0.055; // the surround, proud of the board
+export const BILLBOARD_LEG_H = 0.24; // stands clear of the parapet
+export const BILLBOARD_LEG_W = 0.08;
+
+// Painted strokes are far fatter than neon tube relative to their character -
+// a brush is not a 12mm tube - so this is nearly double CITY_TUBE_RATIO.
+export const BILLBOARD_STROKE = 0.062;
+
+// The floodlights, solved rather than picked. A point light this close to a
+// panel is all hot spot: at the first standoff tried, 0.16 below and 0.3 in
+// front, the board peaked at luma 3.1 - five times the bloom threshold, two
+// glaring blobs where the wash should be. The board can only stand 0.24 clear
+// of the parapet, so the lamps cannot simply drop further away from it; the
+// intensity has to come down with the standoff.
+//
+// These land the panel at 0.52 peak against the 0.58 threshold, with the
+// bottom 1.65x the top - a wash that reads as floodlighting and stops short of
+// glowing. Raise the intensity and the bottom edge blooms before anything else
+// in the scene does.
+export const BILLBOARD_LAMP_DROP = 0.26; // below the board's bottom edge
+export const BILLBOARD_LAMP_OUT = 0.45; // in front of the board face
+export const BILLBOARD_LAMP_COLOUR = 0xffdcae;
+export const BILLBOARD_LAMP_INTENSITY = 0.25;
+export const BILLBOARD_LAMP_RANGE = 2.4;
+
+// ---------------------------------------------------------------------------
 // Ground
 // ---------------------------------------------------------------------------
 
@@ -360,5 +412,4 @@ export const TICK_MAX = 4;
 export const TICK_ON_DURATION = 0.22;
 export const TICK_OFF_DURATION = 0.32;
 
-export const COLON_FLOOR = 0.25; // colon never fully dies
 export const BEACON_PERIOD = 2.4; // rooftop antenna blink

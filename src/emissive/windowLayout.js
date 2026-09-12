@@ -35,6 +35,7 @@ import {
   CAR_H,
   CAR_D,
   LAMP_HEIGHT,
+  billboardParts,
   ROLE_COLON,
   rowY,
   colOffset,
@@ -222,6 +223,23 @@ export function buildWindowLayout() {
       rotY: 0,
       w: 0.13,
       h: 0.13,
+      kind: KIND_PROP,
+      hue: HUE_LAMP,
+      base: 1.0,
+      start: 1.0,
+    });
+  }
+
+  // The painted billboard's two floodlights. Appended AFTER the seeded section,
+  // and the props consume no randomness, so the city is unaffected.
+  for (const l of billboardParts().lamps) {
+    push({
+      x: l.x,
+      y: l.y,
+      z: l.z + 0.07,
+      rotY: 0,
+      w: 0.1,
+      h: 0.08,
       kind: KIND_PROP,
       hue: HUE_LAMP,
       base: 1.0,

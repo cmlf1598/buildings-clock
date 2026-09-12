@@ -8,10 +8,10 @@ import {
   CITY_FRAME_LUMA,
   CITY_PANEL,
 } from "../emissive/palette.js";
-import { KANJI, WORDS, chars } from "../data/kanjiGlyphs.js";
+import { WORDS } from "../data/kanjiGlyphs.js";
 import { CITY_SIGNS, BUILDINGS } from "./layout.js";
-import { roundedRectPoints, tubeFrom, densify } from "./tube.js";
-import { breathe, flicker, lifeFor } from "../emissive/neonLife.js";
+import { roundedRectPoints, tubeFrom, wordTubes } from "./tube.js";
+import { breathe, flicker, lifeFor, faultFor } from "../emissive/neonLife.js";
 import {
   PARAPET_T,
   SIGN_X,
@@ -27,7 +27,6 @@ import {
   CITY_LEG_H,
   CITY_LEG_W,
   CITY_BRACKET_T,
-  CITY_FLICKER_SIGN,
   CITY_BLADE_X,
   CITY_BLADE_INNER,
   CITY_BLADE_EM,
@@ -55,45 +54,24 @@ import {
  * because each sign is its own colour.
  */
 
-const CELL_MAX_SEG = 0.055; // fillet radius on stroke corners, in em units
-
 /**
- * Lofts one word into a single merged geometry, centred on the origin.
+ * Lays a word out and pads it into a panel.
  *
- * Vertical is the default for a Japanese sign and the reason these read as
- * signage rather than as a caption: a blade is a column of square cells, so
- * the characters need no kerning and the panel is exactly one em wide.
+ * The cell layout itself lives in tube.js, shared with the painted billboard;
+ * what belongs here is the padding that turns a word into a sign.
  */
 function buildWord(word, em, dir) {
-  const cs = chars(word);
-  const n = cs.length;
-  const span = n * em + (n - 1) * CITY_CHAR_GAP; // along the reading direction
-  const radius = em * CITY_TUBE_RATIO;
-  const parts = [];
-
-  cs.forEach((ch, i) => {
-    // Bottom-left corner of this character's em box, in sign space.
-    const ox = dir === "h" ? -span / 2 + i * (em + CITY_CHAR_GAP) : -em / 2;
-    const oy =
-      dir === "h"
-        ? -em / 2
-        : span / 2 - (i + 1) * em - i * CITY_CHAR_GAP;
-
-    for (const stroke of KANJI[ch].strokes) {
-      const pts = densify(stroke, CELL_MAX_SEG).map(([x, y]) =>
-        new THREE.Vector3(ox + x * em, oy + y * em, 0),
-      );
-      parts.push(tubeFrom(pts, false, radius, 1, 4));
-    }
-  });
-
-  const merged = mergeGeometries(parts, false);
-  for (const p of parts) p.dispose();
-
+  const { geometry, span } = wordTubes(
+    word,
+    em,
+    CITY_CHAR_GAP,
+    dir,
+    em * CITY_TUBE_RATIO,
+  );
   return {
-    geometry: merged,
-    w: dir === "h" ? span + CITY_PAD * 2 : em + CITY_PAD * 2,
-    h: dir === "h" ? em + CITY_PAD * 2 : span + CITY_PAD * 2,
+    geometry,
+    w: (dir === "h" ? span : em) + CITY_PAD * 2,
+    h: (dir === "h" ? em : span) + CITY_PAD * 2,
   };
 }
 
@@ -182,14 +160,17 @@ class CitySign {
 
     // Seeded, so the city breathes identically on every reload.
     Object.assign(this, lifeFor(index));
-    this.faulty = spec.word === CITY_FLICKER_SIGN;
+    this.faulty = spec.flicker === true;
+    if (this.faulty) Object.assign(this, faultFor(index));
     this.level = 1;
   }
 
-  /** Slow breathe, plus - on exactly one sign - a tube on its way out. */
+  /** Slow breathe, plus - on the signs marked for it - a tube on its way out. */
   step(t) {
     let level = breathe(t, this.period, this.phase);
-    if (this.faulty) level *= flicker(t);
+    if (this.faulty) {
+      level *= flicker(t, this.faultPeriod, this.faultOffset, this.faultSeed);
+    }
 
     if (Math.abs(level - this.level) < 0.002) return;
     this.level = level;

@@ -1,8 +1,7 @@
 import * as THREE from "three";
 import { OFF, HUES } from "./palette.js";
 import { buildWindowLayout } from "./windowLayout.js";
-import { COLON_LIT } from "../data/font5x7.js";
-import { COLON_FLOOR, BEACON_PERIOD } from "../config.js";
+import { BEACON_PERIOD } from "../config.js";
 
 // Module-scope scratch. Reused forever so the hot path allocates nothing.
 const _dummy = new THREE.Object3D();
@@ -90,18 +89,6 @@ export class WindowField {
     _c.b = OFF.b + (L.b - OFF.b) * t;
     this.mesh.setColorAt(i, _c);
     this.dirty = true;
-  }
-
-  /** Continuous heartbeat rather than a square blink; never fully dies. */
-  pulseColon(t) {
-    const wave = 0.5 + 0.5 * Math.cos(t * Math.PI * 2);
-    const b = COLON_FLOOR + (1 - COLON_FLOOR) * Math.pow(wave, 2.2);
-    for (let k = 0; k < COLON_LIT.length; k++) {
-      const i = this.colonMap[COLON_LIT[k]];
-      if (i < 0) continue;
-      this.current[i] = b;
-      this.writeColor(i);
-    }
   }
 
   pulseBeacons(t) {

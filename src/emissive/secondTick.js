@@ -19,17 +19,17 @@ import {
  * WHERE. Only `field.tickRooms` - ambient windows on the front faces of the
  * four towers that carry digits. The digit band itself sits between them with a
  * dark separator row above and below, so the movement frames the numerals
- * without ever touching them. The colon tower keeps the slow room life instead,
- * since it already ticks in its own right.
+ * without ever touching them. The colon tower keeps the slow room life instead.
  *
  * These windows are kept OUT of RoomLife. Two systems driving one window would
  * disagree about whether it is lit, and whichever held the stale belief would
  * fight the other every time it fired.
  *
- * WHEN. On each whole second of elapsed time, which is also where the colon's
- * pulse peaks, so the two land together. Elapsed time freezes with a
- * backgrounded tab, so returning to one does not fire every missed second at
- * once - it simply carries on.
+ * WHEN. On each whole second of elapsed time. This is the ONLY thing marking
+ * seconds now - the colon used to pulse on the same beat, and two indicators
+ * for one quantity is one too many when the second of them sits dead centre.
+ * Elapsed time freezes with a backgrounded tab, so returning to one does not
+ * fire every missed second at once; it simply carries on.
  */
 export class SecondTick {
   constructor(field, animator) {

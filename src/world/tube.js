@@ -1,4 +1,6 @@
 import * as THREE from "three";
+import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
+import { KANJI, chars } from "../data/kanjiGlyphs.js";
 
 /**
  * Neon tube primitives, shared by the AM/PM blade and the kanji city signs.
@@ -78,4 +80,44 @@ export function densify(points, maxSeg) {
   }
   out.push(points[points.length - 1]);
   return out;
+}
+
+/** Fillet radius on a stroke corner, in em units. See densify. */
+const CELL_MAX_SEG = 0.055;
+
+/**
+ * Lofts a word of kanji into one merged geometry, centred on the origin.
+ *
+ * Shared by the neon signs and the painted billboard, which differ only in
+ * stroke thickness and in what material gets hung on the result - a fat dark
+ * tube on a white board reads as a brush stroke, a thin bright one as glass.
+ * The cell layout has to be identical either way, and having it in one place
+ * is what stops the two drifting.
+ *
+ * Vertical is a column of square cells, so kanji need no kerning; horizontal is
+ * the same cells in a row. Either way `span` is the length along the reading
+ * direction, which the caller pads to get a panel.
+ */
+export function wordTubes(word, em, gap, dir, radius) {
+  const cs = chars(word);
+  const n = cs.length;
+  const span = n * em + (n - 1) * gap;
+  const parts = [];
+
+  cs.forEach((ch, i) => {
+    // Bottom-left corner of this character's em box, in sign space.
+    const ox = dir === "h" ? -span / 2 + i * (em + gap) : -em / 2;
+    const oy = dir === "h" ? -em / 2 : span / 2 - (i + 1) * em - i * gap;
+
+    for (const stroke of KANJI[ch].strokes) {
+      const pts = densify(stroke, CELL_MAX_SEG).map(
+        ([x, y]) => new THREE.Vector3(ox + x * em, oy + y * em, 0),
+      );
+      parts.push(tubeFrom(pts, false, radius, 1, 4));
+    }
+  });
+
+  const merged = mergeGeometries(parts, false);
+  for (const p of parts) p.dispose();
+  return { geometry: merged, span };
 }

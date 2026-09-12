@@ -11,7 +11,11 @@ import {
   MOON_COLOUR,
   MOON_INTENSITY,
   MOON_DIR,
+  BILLBOARD_LAMP_COLOUR,
+  BILLBOARD_LAMP_INTENSITY,
+  BILLBOARD_LAMP_RANGE,
 } from "../config.js";
+import { billboardParts } from "../world/layout.js";
 
 /**
  * Night rig.
@@ -67,6 +71,23 @@ export function createLights(scene) {
   bladeGlow.position.set(CITY_BLADE_X + 0.3, SIGN_Y, 1.2);
   bladeGlow.castShadow = false;
 
-  scene.add(ambient, hemi, moon, signGlow, bladeGlow);
-  return { ambient, hemi, moon, signGlow, bladeGlow };
+  // The painted board's two floodlights, under it and slightly in front, so
+  // the wash falls up the panel and dies out toward its top edge. The panel is
+  // solved to sit at luma 0.31 unlit; these lift its lower half without
+  // carrying it over the 0.58 bloom threshold, which is the line between a
+  // floodlit board and a lightbox.
+  const boardLamps = billboardParts().lamps.map((l) => {
+    const light = new THREE.PointLight(
+      BILLBOARD_LAMP_COLOUR,
+      BILLBOARD_LAMP_INTENSITY,
+      BILLBOARD_LAMP_RANGE,
+      2,
+    );
+    light.position.set(l.x, l.y, l.z);
+    light.castShadow = false;
+    return light;
+  });
+
+  scene.add(ambient, hemi, moon, signGlow, bladeGlow, ...boardLamps);
+  return { ambient, hemi, moon, signGlow, bladeGlow, boardLamps };
 }
