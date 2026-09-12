@@ -293,6 +293,50 @@ export const MOON_INTENSITY = 2.5;
 export const MOON_DIR = [-9, 14, 6];
 
 // ---------------------------------------------------------------------------
+// Street-level shop fronts
+//
+// Two to a digit tower, in the blank band below the lowest window row. That
+// band is why ROW_MIN is 1 and not 0 - street level was always meant to be
+// something other than more windows.
+//
+// The vertical budget is tight and fixed: row 1's window reaches down to
+// y = 0.81, so sill + opening + fascia has to finish under it. The numbers
+// below stop at 0.72 and leave a strip of bare wall, which is what a real
+// frontage has between the fascia and the first floor.
+// ---------------------------------------------------------------------------
+
+export const SHOP_W = 1.4; // frontage per shop
+export const SHOP_DX = 0.8; // from the tower centre, so two sit side by side
+export const SHOP_Y0 = 0.04; // sill
+export const SHOP_H = 0.42; // opening
+// The fascia carries the shop's sign and is the loudest part of a frontage in
+// the reference, so it takes a real share of the height rather than a trim
+// strip. Opening to fascia is about 1.75:1; sill + opening + fascia = 0.70,
+// still under row 1's window at 0.81.
+export const SHOP_FASCIA_H = 0.24;
+export const SHOP_PROJ = 0.1; // how far the surround stands off the facade
+export const SHOP_POST_W = 0.09;
+export const SHOP_SHUTTER_RIBS = 5;
+
+// The glazing is divided rather than one sheet. The division is made of REAL
+// gaps with a frame member standing in each - not dark bars laid over one lit
+// quad, which bloom would have closed back up. Each pane is its own instance
+// and the gap between them is genuinely unlit, so the mullion survives.
+export const SHOP_PANES = 3;
+export const SHOP_MULLION_W = 0.05;
+export const SHOP_MULLION_D = 0.06; // stands proud of the glass
+
+// Open shops glow from inside; the fascia above them is a lit sign. Both are
+// solved WELL under the 0.58 bloom threshold. A shop front is a large area
+// compared with a window - five times one - and area reads as brightness, so
+// matching a window's luma would have made the street the loudest thing here.
+// Both are TARGET LUMA, not instance levels - levelFor() solves the level per
+// hue, so a red fascia and a white one land at the same brightness instead of
+// the red one disappearing.
+export const SHOP_GLOW = 0.44; // shop interior
+export const SHOP_SIGN_GLOW = 0.5; // the fascia sign above it
+
+// ---------------------------------------------------------------------------
 // The painted billboard
 //
 // The one sign in the city that is not neon. It is a flat board with black

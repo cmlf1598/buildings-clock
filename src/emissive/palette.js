@@ -1,5 +1,8 @@
 import * as THREE from "three";
 
+/** Rec.709 luma of a LINEAR colour. Every brightness target here is one. */
+const luma709 = (c) => 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
+
 /**
  * Every colour here is LINEAR and deliberately HDR.
  *
@@ -57,8 +60,6 @@ export const OFF = new THREE.Color(0x0a1420).multiplyScalar(1.6);
 // cap simply comes out dimmer, which is the honest answer rather than the
 // wrong hue.
 // ---------------------------------------------------------------------------
-
-const luma709 = (c) => 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
 
 /** Highest any single channel may reach. Above this ACES starts eating hue. */
 export const NEON_PEAK = 1.7;
@@ -138,6 +139,11 @@ export const MAT = {
   billboard: 0xbdb6a8,
   billboardInk: 0x15171c, // near black, but not a hole
   billboardFrame: 0x2f333d,
+  shop: 0x232a39, // the surround, darker than the wall it sits on
+  // Roller shutters are pale metal and read markedly lighter than the building
+  // even unlit - which is the whole point, since a closed shop has nothing
+  // else to say it is there.
+  shutter: 0x6b7285,
   prop: 0x2a3143,
 };
 
@@ -151,6 +157,19 @@ export const HUE_LAMP = 2;
 export const HUE_HEAD = 3;
 export const HUE_TAIL = 4;
 export const HUE_BEACON = 5;
+
+/**
+ * The instance LEVEL that puts a given hue on a target luma.
+ *
+ * The hues are not equally bright - TAILLIGHT carries a third of LIT_WARM's
+ * luma - so asking for a level directly means a red sign and a white one at
+ * "the same" level look nothing alike. Asking for a luma is asking for the
+ * thing you actually care about. Clamped at 1, which is the brightest an
+ * instance goes; a hue too dark to reach the target comes out dimmer rather
+ * than wrong.
+ */
+export const levelFor = (hue, targetLuma) =>
+  Math.min(1, targetLuma / luma709(HUES[hue]));
 
 export const HUES = [
   LIT_COOL,

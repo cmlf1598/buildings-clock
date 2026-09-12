@@ -145,6 +145,42 @@ before a turn bends. That leaves a fillet of a known, small radius on every corn
 a tube bender actually produces, and why the corners read as neither mitred nor melted. Do not
 pre-round the stroke data by hand; you would be applying the same fillet twice.
 
+## Shop fronts
+
+The digit towers carry two shops each along the bottom, in the blank band under the lowest window
+row — which is what `ROW_MIN = 1` was always reserving. Five are open and three are shuttered.
+
+**The mix is the whole point.** A row of identical lit units reads as a repeated decal; the closed
+ones are what turn it into a street, because a shut shop is a thing that *happened* rather than a
+thing that was drawn. The reference does the same, and its two pulled-down shutters carry more of
+the look than the lit frontages do.
+
+An **open** shop is four quads in `WindowField` — three panes of glazing plus the lit fascia sign
+above them — inside a solid surround.
+
+**The glazing is divided with real gaps, not with bars drawn over one lit sheet.** Each pane is its
+own instance and the space between them is genuinely unlit, with a frame member standing in it. That
+distinction is the difference between the division surviving and not: a dark bar laid over a single
+bright quad is exactly the kind of thin dark line bloom closes back up. Panes and mullions are
+derived together from one width in `shopParts()`, so a gap in the first is exactly a bar in the
+second and they cannot drift apart. A **closed** one has no emissive part at all — no glazing to divide, either. That
+is not an omission: it *is* the difference between the two states. The shutter reads on albedo
+alone, which it can, at five times the luma of the wall around it (0.115 against 0.022), with ribs
+across it because corrugation is the only cue for "roller shutter" at forty pixels wide.
+
+Fascia colours are stored by name and their **levels are solved, not stored**. `levelFor(hue, luma)`
+puts any hue on a target brightness, because the hues are not equally bright — `TAILLIGHT` carries a
+third of `LIT_WARM`'s luma, so a red sign and a white one at "the same level" look nothing alike.
+The red one clamps at level 1 and lands slightly under, which is the honest failure.
+
+Both glows sit well under the bloom threshold. A shop front is about five times the area of a
+window, and area reads as brightness — matching a window's luma would have made the street the
+loudest thing in the frame.
+
+The vertical budget is fixed and tight: row 1's window reaches down to y = 0.81, so sill, opening
+and fascia have to finish under it. They stop at 0.70 and leave a strip of bare wall, which is what
+a real frontage has between the fascia and the first floor.
+
 ## The painted board
 
 One sign in the city is not neon. A flat board stands on the hours-ones tower reading **一日一生**
@@ -277,6 +313,7 @@ src/
   world/neonSign.js  the AM/PM blade
   world/citySigns.js the seven kanji signs
   world/billboard.js the one painted, floodlit sign
+  world/shops.js     street-level frontages, open and shuttered
   world/neonBezel.js buildings outlined in tube
   world/castleRoof.js  the generated tenshu roof
   emissive/neonLife.js breathing and the failing tubes
@@ -347,11 +384,33 @@ Without this the hard window edges crawl badly while the camera moves.
 
 **5. The palette multipliers are solved, not chosen.** Every neon colour goes through
 `neon(hex, targetLuma)`, so the number in the source is the *target* and the multiplier is its
-output. The ladder, top to bottom: digits 1.39, AM/PM frame 1.00, near kanji sign 0.72, far kanji
-sign 0.60, brightest ambient window 0.56, bloom threshold 0.58, sign frames 0.46. The first attempt
-at the windows had ambient at luma 2.13 — *exactly as bright as the digits* — and the whole skyline
-bloomed into white mush. If you raise `AMBIENT_GAIN_MAX` toward 1.0, or push the city signs up
-toward the AM/PM sign, you will reproduce that.
+output; `levelFor(hue, luma)` does the same job for an instance level. The ladder as measured today,
+top to bottom:
+
+| luma | |
+|---|---|
+| 1.000 | AM/PM frame |
+| 0.899 | lit digit window |
+| 0.720 | near kanji sign ink |
+| 0.600 | far kanji sign ink |
+| **0.580** | **bloom threshold** — everything above this halos |
+| 0.500 | shop fascia sign, bezel |
+| 0.460 | AM/PM letters, sign frames |
+| 0.440 | shop interior |
+| 0.416 | brightest ambient window (warm) |
+| 0.310 | billboard panel unlit (0.52 under its floodlights) |
+| 0.180 | dimmest ambient window (cool) |
+| 0.043 | brightest building face |
+
+The first attempt at the windows had ambient at luma 2.13 — *exactly as bright as the digits* — and
+the whole skyline bloomed into white mush. If you raise `AMBIENT_GAIN_MAX` toward 1.0, or push the
+city signs up toward the AM/PM sign, you will reproduce that.
+
+Two things in that table are worth knowing rather than inheriting. The AM/PM frame now **outranks
+the digits**, which was not true when it was solved — the digits were 1.39 then. And `LIT_COOL` has
+been dimmed without `LIT_WARM` following, so a **warm window is 1.54x a cool one at the same level**
+even though the comment above them says each hue is solved to the same target. Re-measure this table
+after touching either.
 
 **6. The sign clears tower 5 entirely in x.** The tower flank is at x = 11.3; anything placed
 inboard of that sits inside the building volume and simply does not render. An earlier version

@@ -24,6 +24,10 @@ import {
   AMBIENT_GAIN_MAX,
   AMBIENT_WARM_CHANCE,
   DIGIT_ROW_TOP,
+  SHOP_PROJ,
+  SHOP_FASCIA_H,
+  SHOP_GLOW,
+  SHOP_SIGN_GLOW,
   SEED,
 } from "../config.js";
 import {
@@ -36,6 +40,7 @@ import {
   CAR_D,
   LAMP_HEIGHT,
   billboardParts,
+  shopParts,
   ROLE_COLON,
   rowY,
   colOffset,
@@ -54,6 +59,7 @@ import {
   HUE_HEAD,
   HUE_TAIL,
   HUE_BEACON,
+  levelFor,
 } from "./palette.js";
 
 export function buildWindowLayout() {
@@ -227,6 +233,54 @@ export function buildWindowLayout() {
       hue: HUE_LAMP,
       base: 1.0,
       start: 1.0,
+    });
+  }
+
+  // Shop fronts. An OPEN shop gets two quads - the interior seen through the
+  // glass, and the lit fascia sign above it. A closed one gets neither; its
+  // shutter is solid geometry in shops.js and reads on albedo alone, which is
+  // the entire difference between the two states.
+  const SIGN_HUE = {
+    warm: HUE_WARM,
+    cool: HUE_COOL,
+    tail: HUE_TAIL,
+    head: HUE_HEAD,
+    lamp: HUE_LAMP,
+  };
+  for (const shop of shopParts()) {
+    if (!shop.open) continue;
+
+    // One instance per PANE, not one per shop. The gaps between them are
+    // genuinely unlit, which is what lets the mullions read - a single lit
+    // sheet with dark bars drawn over it would have bloomed them shut.
+    const glow = levelFor(HUE_LAMP, SHOP_GLOW);
+    for (const pane of shop.panes) {
+      push({
+        x: pane.x,
+        y: (shop.y0 + shop.y1) / 2,
+        z: shop.z + FACE_OFFSET,
+        rotY: 0,
+        w: pane.w,
+        h: shop.y1 - shop.y0,
+        kind: KIND_PROP,
+        hue: HUE_LAMP,
+        base: glow,
+        start: glow,
+      });
+    }
+
+    const hue = SIGN_HUE[shop.sign] ?? HUE_WARM;
+    push({
+      x: shop.x,
+      y: (shop.fascia0 + shop.fascia1) / 2,
+      z: shop.z + SHOP_PROJ + FACE_OFFSET,
+      rotY: 0,
+      w: shop.w * 0.86,
+      h: SHOP_FASCIA_H * 0.62,
+      kind: KIND_PROP,
+      hue,
+      base: levelFor(hue, SHOP_SIGN_GLOW),
+      start: levelFor(hue, SHOP_SIGN_GLOW),
     });
   }
 

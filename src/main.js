@@ -15,6 +15,7 @@ import { createComposer, resizeComposer } from "./core/composer.js";
 
 import { createBuildings } from "./world/buildings.js";
 import { createBillboard } from "./world/billboard.js";
+import { createShops } from "./world/shops.js";
 import { createGround } from "./world/ground.js";
 import { createProps } from "./world/props.js";
 import { NeonSign } from "./world/neonSign.js";
@@ -39,6 +40,7 @@ createLights(scene);
 createGround(scene);
 createBuildings(scene);
 createBillboard(scene);
+createShops(scene);
 createProps(scene);
 const sign = new NeonSign(scene);
 const citySigns = new CitySigns(scene);

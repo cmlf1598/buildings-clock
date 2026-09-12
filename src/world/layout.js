@@ -11,6 +11,14 @@
  */
 
 import {
+  SHOP_W,
+  SHOP_DX,
+  SHOP_POST_W,
+  SHOP_PANES,
+  SHOP_MULLION_W,
+  SHOP_Y0,
+  SHOP_H,
+  SHOP_FASCIA_H,
   BILLBOARD_EM,
   BILLBOARD_GAP,
   BILLBOARD_PAD,
@@ -164,6 +172,68 @@ export const BUILDINGS = Object.fromEntries([
   ...TOWERS.map((t) => [`t${t.slot}`, t]),
   ...FILLERS.map((f) => [f.id, f]),
 ]);
+
+// ---------------------------------------------------------------------------
+// Street-level shop fronts
+//
+// Two to a digit tower, in the blank band under the lowest window row. Some are
+// open and some are shuttered, which is the only thing that makes a row of
+// them read as a street rather than as a repeated decal - the reference has the
+// same mix, and the shut ones do as much work as the lit ones.
+//
+// `sign` is the fascia hue by name. Levels are NOT stored: levelFor() solves
+// each one so every fascia lands on the same luma whatever colour it is.
+// ---------------------------------------------------------------------------
+
+export const SHOPS = [
+  { host: "t0", side: -1, open: true, sign: "warm" },
+  { host: "t0", side: 1, open: false, sign: "cool" },
+  { host: "t1", side: -1, open: true, sign: "tail" },
+  { host: "t1", side: 1, open: true, sign: "cool" },
+  { host: "t3", side: -1, open: false, sign: "warm" },
+  { host: "t3", side: 1, open: true, sign: "head" },
+  { host: "t4", side: -1, open: true, sign: "warm" },
+  { host: "t4", side: 1, open: false, sign: "tail" },
+];
+
+export function shopParts() {
+  return SHOPS.map((s) => {
+    const host = BUILDINGS[s.host];
+    if (!host) throw new Error(`shops: unknown host "${s.host}"`);
+    const head = SHOP_Y0 + SHOP_H;
+    const x = host.x + s.side * SHOP_DX;
+
+    // The glazing, divided. Panes and mullions are derived together from one
+    // width so they cannot drift apart - the lit quads come from `panes` and
+    // the frame members that separate them from `mullions`, and a gap in the
+    // first is exactly a bar in the second.
+    const inner = SHOP_W - SHOP_POST_W * 2;
+    const paneW = (inner - SHOP_MULLION_W * (SHOP_PANES - 1)) / SHOP_PANES;
+    const panes = [];
+    const mullions = [];
+    for (let i = 0; i < SHOP_PANES; i++) {
+      const px = x - inner / 2 + i * (paneW + SHOP_MULLION_W) + paneW / 2;
+      panes.push({ x: px, w: paneW });
+      if (i < SHOP_PANES - 1) {
+        mullions.push({ x: px + (paneW + SHOP_MULLION_W) / 2, w: SHOP_MULLION_W });
+      }
+    }
+
+    return {
+      ...s,
+      x,
+      z: host.z + host.D / 2, // the facade plane; everything builds forward
+      w: SHOP_W,
+      inner,
+      panes,
+      mullions,
+      y0: SHOP_Y0,
+      y1: head, // top of the opening
+      fascia0: head,
+      fascia1: head + SHOP_FASCIA_H,
+    };
+  });
+}
 
 // ---------------------------------------------------------------------------
 // The painted billboard

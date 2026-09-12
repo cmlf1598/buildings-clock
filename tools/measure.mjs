@@ -37,6 +37,7 @@ import {
 import { createGround } from "../src/world/ground.js";
 import { createBuildings } from "../src/world/buildings.js";
 import { createBillboard } from "../src/world/billboard.js";
+import { createShops } from "../src/world/shops.js";
 import { createProps } from "../src/world/props.js";
 import { NeonSign } from "../src/world/neonSign.js";
 import { CitySigns } from "../src/world/citySigns.js";
@@ -50,6 +51,7 @@ const scene = new THREE.Scene();
 createGround(scene);
 createBuildings(scene);
 const billboard = createBillboard(scene);
+createShops(scene);
 createProps(scene);
 new NeonSign(scene);
 const citySigns = new CitySigns(scene);
