@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { SIGN_X, SIGN_Y } from "../config.js";
+import { SIGN_X, SIGN_Y, CITY_BLADE_X } from "../config.js";
 
 /**
  * Night rig.
@@ -37,6 +37,17 @@ export function createLights(scene) {
   signGlow.position.set(SIGN_X - 0.3, SIGN_Y, 1.2);
   signGlow.castShadow = false;
 
-  scene.add(ambient, hemi, moon, signGlow);
-  return { ambient, hemi, moon, signGlow };
+  // The same practical for the kanji blade at the other end, so the mirror
+  // holds in the lighting too and the left side of the diorama is not dead.
+  // Tinted AMBER, not cyan, because the balance is inverted on that sign: its
+  // characters are the bright half (luma 0.72) and its frame the dim one
+  // (0.46), so the ink is what the wall actually catches. Intensity and falloff
+  // are matched to signGlow, then scaled by the ratio of the two signs' bright
+  // halves - this blade is the dimmer of the pair and has to light like it.
+  const bladeGlow = new THREE.PointLight(0xffb347, 4 * 0.72, 7, 2);
+  bladeGlow.position.set(CITY_BLADE_X + 0.3, SIGN_Y, 1.2);
+  bladeGlow.castShadow = false;
+
+  scene.add(ambient, hemi, moon, signGlow, bladeGlow);
+  return { ambient, hemi, moon, signGlow, bladeGlow };
 }

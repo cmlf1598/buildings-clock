@@ -17,6 +17,7 @@ import { createBuildings } from "./world/buildings.js";
 import { createGround } from "./world/ground.js";
 import { createProps } from "./world/props.js";
 import { NeonSign } from "./world/neonSign.js";
+import { CitySigns } from "./world/citySigns.js";
 import { TOWERS, DIGIT_SLOTS } from "./world/layout.js";
 
 import { WindowField } from "./emissive/WindowField.js";
@@ -35,6 +36,7 @@ createGround(scene);
 createBuildings(scene);
 createProps(scene);
 const sign = new NeonSign(scene);
+const citySigns = new CitySigns(scene);
 
 const field = new WindowField();
 scene.add(field.mesh);
@@ -158,6 +160,7 @@ function animate(timestamp) {
   field.pulseBeacons(t);
   animator.step(dt);
   sign.step(dt);
+  citySigns.step(t);
   field.flush();
 
   composer.render(); // NOT renderer.render()

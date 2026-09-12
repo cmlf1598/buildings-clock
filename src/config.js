@@ -76,6 +76,7 @@ export const ROW_PITCH =
 export const ROW_Y0 = 0.45; // world y of row 0
 export const ROW_MIN = 1; // lowest windowed row (street level stays blank)
 export const ROOF_MARGIN = 0.75; // blank wall above the top row
+export const PARAPET_T = 0.16; // roof rim thickness; roof signs stand on top of it
 
 export const WIN_W = 0.34;
 export const WIN_H = 0.37;
@@ -125,6 +126,56 @@ export const SIGN_CORNER_R = 0.16;
 export const SIGN_TUBE_BORDER = 0.045;
 export const SIGN_TUBE_LETTER = 0.05;
 export const SIGN_FADE = 0.45; // seconds to cross-fade at noon and midnight
+
+// ---------------------------------------------------------------------------
+// City signs (kanji)
+//
+// Signs are sized from their CONTENT, not from literals: a panel is
+// characters + gaps + padding, so changing the em size or the character count
+// resizes the panel and its brackets without anything else to keep in sync.
+// ---------------------------------------------------------------------------
+
+export const CITY_EM = 1.05; // default character cell, world units
+export const CITY_CHAR_GAP = 0.16; // between character cells
+export const CITY_PAD = 0.3; // panel edge to the nearest character cell
+export const CITY_PANEL_D = 0.12;
+
+// Tube radius is a FRACTION of the em rather than an absolute, so legibility
+// is scale invariant: a bigger sign gets a proportionally fatter tube and the
+// strokes stay the same distance apart in glyph terms. It is thinner than the
+// AM/PM sign's 0.05 relative to its letters because kanji are far denser -
+// 計 packs three horizontals into 0.13 em, and a fatter tube welds them shut.
+export const CITY_TUBE_RATIO = 0.036;
+export const CITY_FRAME_INSET = 0.13; // panel edge to the frame tube
+export const CITY_CORNER_R = 0.14;
+
+// Rooftop signs stand on legs above the parapet, the way a real one does -
+// sitting flush on the deck reads as a billboard lying on the roof.
+export const CITY_LEG_H = 0.26;
+export const CITY_LEG_W = 0.09;
+export const CITY_BRACKET_T = 0.12; // flank-mounted signs, arm thickness
+
+// Slow brightness breathe. Neon does not sit perfectly still, but this has to
+// stay well under the threshold of "something is flashing at me" - the clock
+// is the only thing in the scene allowed to demand attention.
+export const CITY_BREATHE = 0.05; // +/- fraction of the sign's solved level
+export const CITY_BREATHE_T = [13.7, 19.3, 23.1]; // seconds; mutually coprime-ish
+
+// One tube in the city is failing, because one always is. Kept to a single
+// sign and a long duty cycle so it reads as texture rather than a strobe.
+export const CITY_FLICKER_SIGN = "日時"; // the "date and time" sign
+export const CITY_FLICKER_PERIOD = 7.4;
+export const CITY_FLICKER_LEN = 0.38; // seconds of misbehaviour per period
+
+// The left-hand blade, mounted on tower 1 the way the AM/PM sign is mounted on
+// tower 5. Mirrored deliberately: the two blades bracket the whole readout.
+export const CITY_BLADE_X = -SIGN_X;
+export const CITY_BLADE_INNER = -11.16; // starts inside tower 1's facade
+export const CITY_BLADE_EM = 1.2;
+
+// The small blade under the AM/PM sign, on the same bracket line.
+export const CITY_UNDER_Y = 1.75;
+export const CITY_UNDER_EM = 0.95;
 
 // ---------------------------------------------------------------------------
 // Ground

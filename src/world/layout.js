@@ -96,7 +96,8 @@ export const COLON_SLOT = 2;
 // from the roof treatment.
 // ---------------------------------------------------------------------------
 
-const filler = (x, z, W, D, H, roof, extra = {}) => ({
+const filler = (id, x, z, W, D, H, roof, extra = {}) => ({
+  id,
   x,
   z,
   W,
@@ -113,21 +114,156 @@ const filler = (x, z, W, D, H, roof, extra = {}) => ({
 export const FILLERS = [
   // Front row. Partly occluded by the clock towers, which is the intent —
   // they fill the narrow gaps and break up the skyline behind.
-  filler(-11.82, -5.7, 3.0, 3.0, 6.2, "tank"),
-  filler(-6.88, -5.5, 2.8, 2.8, 5.4, "pitched"),
-  filler(-1.83, -5.8, 2.6, 2.6, 7.0, "dome"),
-  filler(3.11, -5.6, 3.0, 3.0, 5.8, "helipad"),
-  filler(8.15, -5.9, 2.6, 2.6, 7.4, "pyramid"),
-  filler(13.21, -5.7, 2.8, 2.8, 4.9, "pitched"),
+  filler("f0", -11.82, -5.7, 3.0, 3.0, 6.2, "tank"),
+  filler("f1", -6.88, -5.5, 2.8, 2.8, 5.4, "pitched"),
+  filler("f2", -1.83, -5.8, 2.6, 2.6, 7.0, "dome"),
+  filler("f3", 3.11, -5.6, 3.0, 3.0, 5.8, "helipad"),
+  filler("f4", 8.15, -5.9, 2.6, 2.6, 7.4, "pyramid"),
+  filler("f5", 13.21, -5.7, 2.8, 2.8, 4.9, "pitched"),
 
   // Back row. The 30 degree pitch lifts these by z*sin(pitch) = 5.25 on
   // screen, so every one of them clears the tallest tower and reads as a
   // distinct silhouette against the sky.
-  filler(-9.21, -10.5, 3.2, 2.8, 6.6, "flat"),
-  filler(-4.48, -10.8, 2.6, 2.6, 5.2, "pitched"),
-  filler(0.78, -10.5, 3.0, 3.0, 6.9, "flat"),
-  filler(6.04, -10.6, 2.8, 2.8, 5.4, "flat", { antenna: true }),
-  filler(11.30, -10.4, 2.8, 2.8, 6.0, "tank"),
+  filler("b0", -9.21, -10.5, 3.2, 2.8, 6.6, "flat"),
+  filler("b1", -4.48, -10.8, 2.6, 2.6, 5.2, "pitched"),
+  filler("b2", 0.78, -10.5, 3.0, 3.0, 6.9, "flat"),
+  filler("b3", 6.04, -10.6, 2.8, 2.8, 5.4, "flat", { antenna: true }),
+  filler("b4", 11.30, -10.4, 2.8, 2.8, 6.0, "tank"),
+];
+
+/** Every sign-mountable body, by id. Towers are "t0".."t4" by slot. */
+export const BUILDINGS = Object.fromEntries([
+  ...TOWERS.map((t) => [`t${t.slot}`, t]),
+  ...FILLERS.map((f) => [f.id, f]),
+]);
+
+// ---------------------------------------------------------------------------
+// City signs
+//
+// Two mounts. "roof" stands on a host building's parapet; "blade" hangs off a
+// flank on brackets, which is what the AM/PM sign already does. Both name a
+// host rather than carrying an absolute y, so a sign follows its building if
+// the height ever changes.
+//
+// Placement is solved against SCREEN x, not world x, because the projection
+// shears everything: screenX = x*cos(yaw) + z*sin(yaw), so a back-row sign at
+// z = -9.3 slides 2.9 units LEFT of where its world x suggests. The comment on
+// each entry is the screen x it actually lands on, and they are spread across
+// the frame rather than clustered. Two signs may share a screen x only if
+// their screen y ranges are disjoint - the pair at -11.9 and -10.9 do, by
+// nearly four units.
+//
+// Every sign also has to stay inside its host's roof footprint and under
+// y = 11.6, which is the top of the scene's bounding box (tower 4's rooftop
+// plant). Breaking that ceiling grows the box the framing is solved against
+// and re-crops the whole diorama - see tools/measure.mjs.
+// ---------------------------------------------------------------------------
+
+export const CITY_SIGNS = [
+  // Hour / minute / second, hung off tower 1 exactly the way the AM/PM sign is
+  // hung off tower 5. The mirror is the point: the two blades bracket the
+  // readout, and this one names the units the digits are counting in.
+  {
+    word: "時分秒",
+    mount: "blade",
+    dir: "v",
+    screenX: -11.92,
+    frame: "cyan",
+    ink: "amber",
+    near: true,
+  },
+
+  // "Now", on the same bracket line as the AM/PM sign but below it, the way a
+  // real corner stacks its tenants down the building.
+  {
+    word: "今",
+    mount: "blade",
+    side: "right",
+    dir: "v",
+    screenX: 12.04,
+    frame: "magenta",
+    ink: "magenta",
+    near: true,
+  },
+
+  // "Clock". The most literal sign in the city, so it goes high and left where
+  // it reads against empty sky.
+  {
+    word: "時計",
+    mount: "roof",
+    host: "b0",
+    x: -8.4,
+    z: -9.3,
+    em: 1.15,
+    dir: "v",
+    screenX: -10.86,
+    frame: "magenta",
+    ink: "amber",
+  },
+
+  // "Today", flat on tower 1's roof - the only sign on a clock tower, and the
+  // only one the camera sees at the digits' own depth.
+  {
+    word: "今日",
+    mount: "roof",
+    host: "t0",
+    x: -9.6,
+    z: 0.95,
+    em: 1.0,
+    dir: "h",
+    screenX: -8.83,
+    frame: "cyan",
+    ink: "cyan",
+    near: true,
+  },
+
+  // "Sun and moon" - the idiom for time passing. Unframed, so the back row
+  // does not turn into a row of identical boxes.
+  {
+    word: "日月",
+    mount: "roof",
+    host: "b2",
+    x: 0.6,
+    z: -9.2,
+    em: 1.1,
+    dir: "v",
+    screenX: -2.27,
+    ink: "violet",
+  },
+
+  // "Date and time". This is the one with the failing tube.
+  //
+  // It used to read 正午, "noon", until the preview showed the problem: at the
+  // ~20px per character a back-row sign actually gets, 正 is indistinguishable
+  // from 五 (five). The strokes were correct - it is the SIZE that cannot carry
+  // a character whose only cue is the length of one horizontal spur. 日 and 時
+  // survive the same treatment, so the back row gets those instead.
+  {
+    word: "日時",
+    mount: "roof",
+    host: "b3",
+    x: 5.5,
+    z: -9.5,
+    em: 1.05,
+    dir: "v",
+    screenX: 2.29,
+    ink: "jade",
+  },
+
+  // "Tomorrow", far right, low and wide so it does not fight the AM/PM sign
+  // directly below it.
+  {
+    word: "明日",
+    mount: "roof",
+    host: "b4",
+    x: 11.25,
+    z: -9.3,
+    em: 0.92,
+    dir: "h",
+    screenX: 7.83,
+    frame: "amber",
+    ink: "magenta",
+  },
 ];
 
 // ---------------------------------------------------------------------------

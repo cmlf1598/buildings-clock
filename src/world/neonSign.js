@@ -7,6 +7,7 @@ import {
   SIGN_DIM,
 } from "../emissive/palette.js";
 import { GLYPHS, SLANT, wordWidth } from "../data/scriptGlyphs.js";
+import { roundedRectPoints, tubeFrom } from "./tube.js";
 import {
   SIGN_X,
   SIGN_Y,
@@ -35,37 +36,12 @@ import {
  * Everything here is TubeGeometry swept along the centrelines in
  * data/scriptGlyphs.js, because neon IS bent tube - an outline font or a
  * dot matrix cannot give you the continuous stroke and the round cross-section
- * that makes the glow read correctly.
+ * that makes the glow read correctly. The sweeping itself lives in tube.js,
+ * shared with the kanji city signs.
  *
  * All the tubes of one box are merged into a single geometry, so the whole
  * sign is four meshes (two frames, two words) rather than one per stroke.
  */
-
-/** Dense rounded-rectangle polyline, centred on the origin. */
-function roundedRectPoints(w, h, r, perCorner = 6) {
-  const hw = w / 2 - r;
-  const hh = h / 2 - r;
-  const pts = [];
-  const corners = [
-    [hw, hh, 0],
-    [-hw, hh, Math.PI / 2],
-    [-hw, -hh, Math.PI],
-    [hw, -hh, -Math.PI / 2],
-  ];
-  for (const [cx, cy, a0] of corners) {
-    for (let i = 0; i <= perCorner; i++) {
-      const a = a0 + (i / perCorner) * (Math.PI / 2);
-      pts.push(new THREE.Vector3(cx + r * Math.cos(a), cy + r * Math.sin(a), 0));
-    }
-  }
-  return pts;
-}
-
-function tubeFrom(points, closed, radius, segmentsPerPoint = 6) {
-  const curve = new THREE.CatmullRomCurve3(points, closed, "centripetal");
-  const segs = Math.max(16, points.length * segmentsPerPoint);
-  return new THREE.TubeGeometry(curve, segs, radius, 6, closed);
-}
 
 /**
  * Lofts one word into a single merged geometry.
