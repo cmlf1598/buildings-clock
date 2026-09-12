@@ -1,4 +1,4 @@
-# Buildings Clock
+# Night City Digital Clock
 
 ![A low-poly night city on a floating slab. Five towers spell 10:37 in lit windows, with neon kanji signs on the rooftops, a floodlit painted board, a tiered castle roof and shop fronts along the street.](docs/screenshot.png)
 
