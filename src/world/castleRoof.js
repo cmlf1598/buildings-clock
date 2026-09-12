@@ -11,6 +11,8 @@ import {
   CASTLE_CONCAVE,
   CASTLE_RINGS,
   CASTLE_SAMPLES,
+  EAVE_GLOW_DROP,
+  EAVE_GLOW_REACH,
 } from "../config.js";
 
 /**
@@ -127,6 +129,30 @@ function ring(tier, t, cx, cz) {
     }
   }
   return pts;
+}
+
+/**
+ * Where to stand the practicals that light this roof stack.
+ *
+ * One per tier ABOVE the bottom, because a light only earns its place if there
+ * is a roof under it to catch it - a source at the bottom eave would hang
+ * against the host building's wall and light nothing the camera reads as roof.
+ *
+ * Each sits just beneath its tier's eave, which puts it above the whole of the
+ * roof below, and is offset toward the two VISIBLE eaves rather than sitting on
+ * the building's axis. A central light would rake the ridge and leave the near
+ * eaves dark, which is backwards - the light is meant to be coming from under
+ * the eave, not from inside the building.
+ */
+export function castleEaveGlows(host) {
+  return castleTiers(host)
+    .slice(1)
+    .map((tier) => ({
+      x: host.x + tier.ew * 0.45,
+      y: tier.y - EAVE_GLOW_DROP,
+      z: host.z + tier.ed * 0.45,
+      range: tier.ew * EAVE_GLOW_REACH,
+    }));
 }
 
 /**

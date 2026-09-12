@@ -1,5 +1,13 @@
 import * as THREE from "three";
-import { SIGN_X, SIGN_Y, CITY_BLADE_X } from "../config.js";
+import {
+  SIGN_X,
+  SIGN_Y,
+  CITY_BLADE_X,
+  EAVE_GLOW_COLOUR,
+  EAVE_GLOW_INTENSITY,
+} from "../config.js";
+import { BUILDINGS } from "../world/layout.js";
+import { castleEaveGlows } from "../world/castleRoof.js";
 
 /**
  * Night rig.
@@ -48,6 +56,29 @@ export function createLights(scene) {
   bladeGlow.position.set(CITY_BLADE_X + 0.3, SIGN_Y, 1.2);
   bladeGlow.castShadow = false;
 
-  scene.add(ambient, hemi, moon, signGlow, bladeGlow);
-  return { ambient, hemi, moon, signGlow, bladeGlow };
+  // The castle's eave glow: warm light washing down over each roof, as if from
+  // lamps hung under the eave above it.
+  //
+  // There are no lamps. There were - eighteen of them - and eighteen glowing
+  // dots on a background building pulled the eye straight off the clock, which
+  // is the one thing this whole rig exists to avoid. The light they cast is
+  // what was actually doing the work, so the light is what stayed.
+  //
+  // See castleEaveGlows for why these stand under the eaves rather than on the
+  // building's axis, and config.js for why below an eave is the only place a
+  // source can be and still light a roof this camera can see.
+  const eaveGlows = castleEaveGlows(BUILDINGS.b1).map((g) => {
+    const light = new THREE.PointLight(
+      EAVE_GLOW_COLOUR,
+      EAVE_GLOW_INTENSITY,
+      g.range,
+      2,
+    );
+    light.position.set(g.x, g.y, g.z);
+    light.castShadow = false;
+    return light;
+  });
+
+  scene.add(ambient, hemi, moon, signGlow, bladeGlow, ...eaveGlows);
+  return { ambient, hemi, moon, signGlow, bladeGlow, eaveGlows };
 }

@@ -236,6 +236,29 @@ export const CASTLE_RINGS = 5; // loft rings from eave to ridge
 export const CASTLE_SAMPLES = 5; // eave points per side
 
 // ---------------------------------------------------------------------------
+// Eave glow
+//
+// Warm light washing down over the castle's roofs, as if from lamps hung under
+// each eave. The lamps are NOT modelled - they were, and eighteen glowing dots
+// on a background building pulled the eye clean off the clock. What survived
+// is the thing they were there to produce.
+//
+// The geometry is the whole argument. An eave is the lowest point of its own
+// roof, so a source hung beneath tier N's eave clears the whole of tier N-1's
+// roof and lights it from ABOVE - the one direction this camera can see, since
+// it looks down at 30 degrees. Each roof plane then carries its own falloff,
+// brightest under the eave above it and dying toward its own, and it is that
+// per-roof shading that separates a stack of three into three.
+//
+// Inverse-square falloff is wanted here, not merely tolerated.
+// ---------------------------------------------------------------------------
+
+export const EAVE_GLOW_DROP = 0.17; // below the eave, where lamps would hang
+export const EAVE_GLOW_COLOUR = 0xffb877;
+export const EAVE_GLOW_INTENSITY = 7.5;
+export const EAVE_GLOW_REACH = 2.6; // range, against the eave half-width
+
+// ---------------------------------------------------------------------------
 // Ground
 // ---------------------------------------------------------------------------
 

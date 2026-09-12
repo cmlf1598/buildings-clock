@@ -3,9 +3,9 @@
 A night city on a floating diorama slab, seen through an orthographic camera. Five towers in the
 front row are a dot-matrix clock: lit windows spell the time. A neon blade sign on the last tower
 shows AM/PM in pink script inside a cyan tube frame, seven kanji signs stand on the rooftops and
-hang off the flanks, two buildings at the back are outlined in neon — one of them a tiered castle
-roof drawn in tube — and the camera leans toward your pointer and drifts on its own when you leave
-it alone.
+hang off the flanks, two buildings at the back are outlined in neon, a tiered castle roof glows
+warm under its own eaves, and the camera leans toward your pointer and drifts on its own when you
+leave it alone.
 
 ```
 npm install
@@ -103,6 +103,37 @@ Ridges and hips lie exactly *on* the surface they trace, so every bezel line is 
 solid by the tube radius plus a margin. Without that the solid wins the depth test along the whole
 length and the tube simply is not there.
 
+### The eave glow
+
+The castle's roofs are washed with warm light from beneath each eave. **There are no lamps** —
+just the light they would cast.
+
+**Why beneath an eave is the only place that works.** An eave is the lowest point of its own roof.
+So a source hung under tier N's eave clears the whole of tier N−1's roof and lights it from *above*
+— the one direction this camera can see, because it looks down at 30°. Each roof plane then carries
+its own falloff, brightest under the eave above it and dying toward its own, and it is that
+per-roof shading that separates a stack of three into three. Inverse-square falloff is wanted here,
+not merely tolerated.
+
+Three attempts got here, and the two dead ends are worth knowing before changing this:
+
+- **A neon bezel tracing the eaves, ridges and hips.** It stated the roof so loudly that the solid
+  underneath stopped existing — three glowing hoops and no building.
+- **Lamps hung at the four corners, then eighteen in rows under the eaves.** The corner version
+  lit nothing: a corner is where the eave is *highest*, so there is no roof beneath it to catch
+  anything, and the lamp read as an ornament pinned to the outline. The rows did light the roofs
+  correctly — but eighteen glowing dots on a *background* building pulled the eye straight off the
+  clock, which is the one thing the whole palette exists to prevent.
+
+What survived is the light, without the sources. The lamps were never the point; they were how the
+light got justified.
+
+Two point lights, not eighteen — one per gap between tiers, each just beneath its eave and offset
+toward the two *visible* eaves rather than sitting on the building's axis. A central light would
+rake the ridge and leave the near eaves dark, which is backwards: the light is meant to be coming
+from under the eave, not from inside the building. There is no third light, because nothing hangs
+above the topmost roof; it stays dark and the top of the stack reads by silhouette.
+
 ## Debug flags
 
 Append to the URL. No rebuild needed.
@@ -167,7 +198,7 @@ cross-fades by tweening material colours rather than going through the window an
 
 **The kanji signs cost 13 meshes between them, not 28.** Every panel, leg and bracket in the city
 shares one material, so they merge into a single mesh; only the lit tubes need one each, because
-each sign is its own colour. Whole scene: 99 draw calls, 28k triangles. (Draw calls exceed the mesh
+each sign is its own colour. Whole scene: 100 draw calls, 30k triangles. (Draw calls exceed the mesh
 count by five because the slab carries a material array, and three.js issues one call per geometry
 group.) The two bezels are one mesh each and 960 triangles between them.
 
