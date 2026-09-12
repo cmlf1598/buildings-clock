@@ -4,4 +4,4 @@ dist
 *.local
 .claude
 reference_images
-preview.png
+/preview.png

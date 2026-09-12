@@ -1,5 +1,7 @@
 # Buildings Clock
 
+![A low-poly night city on a floating slab. Five towers spell 10:37 in lit windows, with neon kanji signs on the rooftops, a floodlit painted board, a tiered castle roof and shop fronts along the street.](docs/screenshot.png)
+
 A night city on a floating diorama slab, seen through an orthographic camera. Five towers in the
 front row are a dot-matrix clock: lit windows spell the time. A neon blade sign on the last tower
 shows AM/PM in pink script inside a cyan tube frame, seven kanji signs stand on the rooftops and
@@ -367,6 +369,20 @@ their actual geometry, so neither can drift away from what ships. Nothing under 
 npm run measure   # does the scene still fit the frame?
 npm run preview   # what does it look like?
 ```
+
+`npm run preview` is the software rasteriser, and it is **not** what the app looks like — it shades
+flat and fakes the bloom. The screenshot at the top of this file is a real browser frame, captured
+headlessly against the built app:
+
+```
+npm run build
+npx vite preview --port 4173 --strictPort
+chrome --headless=new --disable-gpu --enable-unsafe-swiftshader   --window-size=1400,1000 --virtual-time-budget=12000   --screenshot=docs/screenshot.png "http://localhost:4173/?t=10:37"
+```
+
+1400x1000 is not arbitrary: `DESIGN_W / DESIGN_H` is 1.40, so at that aspect the diorama fills
+93% of the frame in both directions and the contain-fit has nothing left over. `?t=10:37` pins the
+reading so the shot is reproducible.
 
 **A single InstancedMesh carries every glowing window.** `WindowField` (~1440 unit quads) is every
 facade window, shop front, streetlamp head and rooftop beacon that stays put — one draw call. It uses
