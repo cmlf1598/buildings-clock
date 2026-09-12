@@ -26,14 +26,15 @@ import * as THREE from "three";
  *     lit digit window      1.39   hero light, blooms strongly
  *     brightest ambient     0.56   grazes the threshold, soft halo only
  *     dimmest ambient       0.28   glows, never bleeds
- *     brightest roof face  ~0.06   nowhere near it
+ *     brightest roof face   0.04   nowhere near it, and scales with
+ *                                   AMBIENT_INTENSITY in config.js
  *
  * Getting this wrong is the single most likely way to wreck the look: with
  * the first pass every lit window sat at luma 2.13 — ambient windows exactly
  * as bright as the digits — and the whole skyline bloomed into white mush.
  */
 
-export const LIT_COOL = new THREE.Color(0xdfeaff).multiplyScalar(1.7);
+export const LIT_COOL = new THREE.Color(0xdfeaff).multiplyScalar(1.1);
 export const LIT_WARM = new THREE.Color(0xffb85c).multiplyScalar(2.46);
 export const OFF = new THREE.Color(0x0a1420).multiplyScalar(1.6);
 

@@ -93,7 +93,7 @@ export const AMBIENT_DENSITY = 0.18;
 // toward 1.0 the ambient windows bloom as hard as the digits and the
 // readout stops reading.
 export const AMBIENT_GAIN_MIN = 0.2;
-export const AMBIENT_GAIN_MAX = 0.4;
+export const AMBIENT_GAIN_MAX = 0.3;
 export const AMBIENT_WARM_CHANCE = 0.2; // reference reads cool, so warm is the minority
 
 export const DIGIT_GAIN = 1.0;
@@ -219,11 +219,11 @@ export const CONE_ROOF = {
 // recognisable thing about the form, which is why the bezel traces it.
 // ---------------------------------------------------------------------------
 
-export const CASTLE_TIERS = 3;
-export const CASTLE_SHRINK = 0.7; // each storey against the one below
+export const CASTLE_TIERS = 4;
+export const CASTLE_SHRINK = 0.75; // each storey against the one below
 export const CASTLE_EAVE_OVER = 1.2; // eave overhang, against its own storey
 export const CASTLE_RISE = 0.4; // roof rise, against the eave half-width
-export const CASTLE_DRUM = 0.42; // storey wall height, against its half-width
+export const CASTLE_DRUM = 0.5; // storey wall height, against its half-width
 export const CASTLE_RIDGE = 0.45; // ridge half-length, against the eave half-width
 export const CASTLE_FLICK = 0.095; // corner lift, against the eave half-width
 // Exponent on the corner lift. At 2 (a plain parabola) the rise is spread over
@@ -236,27 +236,42 @@ export const CASTLE_RINGS = 5; // loft rings from eave to ridge
 export const CASTLE_SAMPLES = 5; // eave points per side
 
 // ---------------------------------------------------------------------------
-// Eave glow
+// Night rig
 //
-// Warm light washing down over the castle's roofs, as if from lamps hung under
-// each eave. The lamps are NOT modelled - they were, and eighteen glowing dots
-// on a background building pulled the eye clean off the clock. What survived
-// is the thing they were there to produce.
+// THE PLACE TO TUNE OVERALL SCENE BRIGHTNESS. These used to be literals inside
+// core/lights.js; they are here because they are exactly the numbers you want
+// to sit and nudge, and config.js is where this project keeps those.
 //
-// The geometry is the whole argument. An eave is the lowest point of its own
-// roof, so a source hung beneath tier N's eave clears the whole of tier N-1's
-// roof and lights it from ABOVE - the one direction this camera can see, since
-// it looks down at 30 degrees. Each roof plane then carries its own falloff,
-// brightest under the eave above it and dying toward its own, and it is that
-// per-roof shading that separates a stack of three into three.
+// Know their relative strength before reaching for one, because it is not what
+// you would guess. Measured on a roof facing straight up, the three fills
+// contribute roughly:
 //
-// Inverse-square falloff is wanted here, not merely tolerated.
+//     moon (directional)   0.33   <- dominates anything facing up or +Z
+//     hemisphere sky       0.13
+//     ambient              0.06 at intensity 0.35
+//
+// So AMBIENT_INTENSITY is the gentlest of the three and the safest to push: it
+// lifts the surfaces the moon misses - the +X flanks and everything in shadow -
+// without flattening the moon's modelling. It is also weak enough that large
+// numbers here are normal. Doubling it does not double the scene.
+//
+// There is enormous headroom before any of this matters to the readout. A roof
+// sits near luma 0.03 against the dimmest ambient WINDOW at 0.28 and the bloom
+// threshold at 0.58, so the buildings can be lifted several times over before
+// they start competing with the windows. What they cannot survive is the
+// albedo trap in the note below.
 // ---------------------------------------------------------------------------
 
-export const EAVE_GLOW_DROP = 0.17; // below the eave, where lamps would hang
-export const EAVE_GLOW_COLOUR = 0xffb877;
-export const EAVE_GLOW_INTENSITY = 7.5;
-export const EAVE_GLOW_REACH = 2.6; // range, against the eave half-width
+export const AMBIENT_COLOUR = 0x5a6f96;
+export const AMBIENT_INTENSITY = 0.75;
+
+export const HEMI_SKY = 0x6d86c4;
+export const HEMI_GROUND = 0x7a4a1e;
+export const HEMI_INTENSITY = 0.5;
+
+export const MOON_COLOUR = 0xaec4f0;
+export const MOON_INTENSITY = 2.5;
+export const MOON_DIR = [-9, 14, 6];
 
 // ---------------------------------------------------------------------------
 // Ground

@@ -3,11 +3,15 @@ import {
   SIGN_X,
   SIGN_Y,
   CITY_BLADE_X,
-  EAVE_GLOW_COLOUR,
-  EAVE_GLOW_INTENSITY,
+  AMBIENT_COLOUR,
+  AMBIENT_INTENSITY,
+  HEMI_SKY,
+  HEMI_GROUND,
+  HEMI_INTENSITY,
+  MOON_COLOUR,
+  MOON_INTENSITY,
+  MOON_DIR,
 } from "../config.js";
-import { BUILDINGS } from "../world/layout.js";
-import { castleEaveGlows } from "../world/castleRoof.js";
 
 /**
  * Night rig.
@@ -20,21 +24,28 @@ import { castleEaveGlows } from "../world/castleRoof.js";
  * numbers multiply to ~1e-4 and you get pure black. Keep the albedo mid-dark
  * and the lights moderate, then let the low exposure and ACES do the
  * darkening.
+ *
+ * Every number in here lives in config.js. Tune scene brightness there -
+ * AMBIENT_INTENSITY first, since it lifts what the moon misses without
+ * flattening the moon's modelling. The comment above those constants has the
+ * measured strength of each fill, which is worth reading before reaching for
+ * one: they are not equally powerful, and ambient is the weakest of the three.
  */
 export function createLights(scene) {
-  // Cold base fill — nothing is ever pure black.
-  const ambient = new THREE.AmbientLight(0x5a6f96, 0.35);
+  // Cold base fill — nothing is ever pure black. This is the knob that lifts
+  // shadowed faces without touching the moon's contrast.
+  const ambient = new THREE.AmbientLight(AMBIENT_COLOUR, AMBIENT_INTENSITY);
 
   // The key trick for "night but not flat": cold sky above, warm sodium
   // street bounce below. Roofs pick up cold blue, lower walls pick up warm
   // orange. A free vertical gradient at zero cost.
-  const hemi = new THREE.HemisphereLight(0x6d86c4, 0x7a4a1e, 0.5);
+  const hemi = new THREE.HemisphereLight(HEMI_SKY, HEMI_GROUND, HEMI_INTENSITY);
 
   // Cold moon key from the upper LEFT, deliberately opposite the camera (which
   // sits at +X), so the +X side face we can actually see is the shadow side
   // and reads clearly darker than the front. That is what gives the volume.
-  const moon = new THREE.DirectionalLight(0xaec4f0, 0.85);
-  moon.position.set(-9, 14, 6);
+  const moon = new THREE.DirectionalLight(MOON_COLOUR, MOON_INTENSITY);
+  moon.position.set(...MOON_DIR);
   moon.castShadow = false;
 
   // Practical: spill from the neon sign onto the last tower. Tinted to the
@@ -56,29 +67,6 @@ export function createLights(scene) {
   bladeGlow.position.set(CITY_BLADE_X + 0.3, SIGN_Y, 1.2);
   bladeGlow.castShadow = false;
 
-  // The castle's eave glow: warm light washing down over each roof, as if from
-  // lamps hung under the eave above it.
-  //
-  // There are no lamps. There were - eighteen of them - and eighteen glowing
-  // dots on a background building pulled the eye straight off the clock, which
-  // is the one thing this whole rig exists to avoid. The light they cast is
-  // what was actually doing the work, so the light is what stayed.
-  //
-  // See castleEaveGlows for why these stand under the eaves rather than on the
-  // building's axis, and config.js for why below an eave is the only place a
-  // source can be and still light a roof this camera can see.
-  const eaveGlows = castleEaveGlows(BUILDINGS.b1).map((g) => {
-    const light = new THREE.PointLight(
-      EAVE_GLOW_COLOUR,
-      EAVE_GLOW_INTENSITY,
-      g.range,
-      2,
-    );
-    light.position.set(g.x, g.y, g.z);
-    light.castShadow = false;
-    return light;
-  });
-
-  scene.add(ambient, hemi, moon, signGlow, bladeGlow, ...eaveGlows);
-  return { ambient, hemi, moon, signGlow, bladeGlow, eaveGlows };
+  scene.add(ambient, hemi, moon, signGlow, bladeGlow);
+  return { ambient, hemi, moon, signGlow, bladeGlow };
 }

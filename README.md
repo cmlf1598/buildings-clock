@@ -3,9 +3,9 @@
 A night city on a floating diorama slab, seen through an orthographic camera. Five towers in the
 front row are a dot-matrix clock: lit windows spell the time. A neon blade sign on the last tower
 shows AM/PM in pink script inside a cyan tube frame, seven kanji signs stand on the rooftops and
-hang off the flanks, two buildings at the back are outlined in neon, a tiered castle roof glows
-warm under its own eaves, and the camera leans toward your pointer and drifts on its own when you
-leave it alone.
+hang off the flanks, two buildings at the back are outlined in neon, one of them under a tiered
+castle roof, and the camera leans toward your pointer and drifts on its own when you leave it
+alone.
 
 ```
 npm install
@@ -103,36 +103,39 @@ Ridges and hips lie exactly *on* the surface they trace, so every bezel line is 
 solid by the tube radius plus a margin. Without that the solid wins the depth test along the whole
 length and the tube simply is not there.
 
-### The eave glow
+## Scene brightness
 
-The castle's roofs are washed with warm light from beneath each eave. **There are no lamps** —
-just the light they would cast.
+**Tune it in `src/config.js`, under "Night rig".** `AMBIENT_INTENSITY` first.
 
-**Why beneath an eave is the only place that works.** An eave is the lowest point of its own roof.
-So a source hung under tier N's eave clears the whole of tier N−1's roof and lights it from *above*
-— the one direction this camera can see, because it looks down at 30°. Each roof plane then carries
-its own falloff, brightest under the eave above it and dying toward its own, and it is that
-per-roof shading that separates a stack of three into three. Inverse-square falloff is wanted here,
-not merely tolerated.
+The three fills are nowhere near equal, which is the thing to know before reaching for one.
+Measured on a roof facing straight up:
 
-Three attempts got here, and the two dead ends are worth knowing before changing this:
+| fill | contribution | what it touches |
+|---|---|---|
+| `MOON_INTENSITY` (directional) | 0.33 | anything facing up or +Z. Dominates, and carries the modelling |
+| `HEMI_INTENSITY` (hemisphere) | 0.13 | cold from above, warm sodium bounce from below |
+| `AMBIENT_INTENSITY` | 0.06 at intensity 0.35 | everything, flatly |
 
-- **A neon bezel tracing the eaves, ridges and hips.** It stated the roof so loudly that the solid
-  underneath stopped existing — three glowing hoops and no building.
-- **Lamps hung at the four corners, then eighteen in rows under the eaves.** The corner version
-  lit nothing: a corner is where the eave is *highest*, so there is no roof beneath it to catch
-  anything, and the lamp read as an ornament pinned to the outline. The rows did light the roofs
-  correctly — but eighteen glowing dots on a *background* building pulled the eye straight off the
-  clock, which is the one thing the whole palette exists to prevent.
+So ambient is the **gentlest** of the three and the safest to push: it lifts the faces the moon
+misses — the +X flanks and everything in shadow — without flattening the moon's contrast. It is
+also weak enough that large values are normal here. Doubling it does not double the scene: 0.35 → 1.2
+moves a roof from luma 0.031 to 0.039, because a dark ambient colour times a deliberately dark
+building albedo is a small number twice over.
 
-What survived is the light, without the sources. The lamps were never the point; they were how the
-light got justified.
+There is a lot of headroom. The brightest building face sits at luma 0.04 against the *dimmest*
+ambient window at 0.28, so the buildings can be lifted several times over before they start
+competing with the windows, let alone the digits. Two things to watch as you climb:
 
-Two point lights, not eighteen — one per gap between tiers, each just beneath its eave and offset
-toward the two *visible* eaves rather than sitting on the building's axis. A central light would
-rake the ridge and leave the near eaves dark, which is backwards: the light is meant to be coming
-from under the eave, not from inside the building. There is no third light, because nothing hangs
-above the topmost roof; it stays dark and the top of the stack reads by silhouette.
+- Around 4 and up it stops reading as night — the shadowed faces catch up with the lit ones and the
+  moon's modelling goes flat.
+- Unlit windows are `MeshBasicMaterial` and do not respond to any of this, so raising the fill
+  raises the *wall* behind them and the dark window grid becomes more visible against it. That is
+  usually what you want — it is what the reference does — but it is a look change, not just a
+  brightness change.
+
+If you want more than the fills can give, the real lever is `MAT.body` / `MAT.roof` in
+`emissive/palette.js`. Everything multiplies by the albedo, so it moves the scene far harder than
+any light does — and straight into the trap in note 5 if you overdo it.
 
 ## Debug flags
 
