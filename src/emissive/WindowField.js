@@ -31,6 +31,8 @@ export class WindowField {
     this.digitMap = layout.digitMap;
     this.colonMap = layout.colonMap;
     this.beacons = layout.beacons;
+    this.rooms = layout.rooms;
+    this.tickRooms = layout.tickRooms;
 
     const geometry = new THREE.PlaneGeometry(1, 1);
     const material = new THREE.MeshBasicMaterial({ color: 0xffffff });

@@ -4,6 +4,7 @@
  *     node tools/preview.mjs out.png [width] [height]
  *     T=23:59 node tools/preview.mjs out.png          # a different reading
  *     TGT=-4.5,7.5,-10.8 FH=8 node tools/preview.mjs out.png   # zoom in
+ *     RT=3600 node tools/preview.mjs out.png          # the city an hour in
  *
  * TGT and FH move and tighten the camera for inspecting one detail. They do
  * NOT change the scene - the shipped framing is whatever config.js says, and
@@ -42,6 +43,8 @@ import { CitySigns } from "../src/world/citySigns.js";
 import { NeonBezels } from "../src/world/neonBezel.js";
 import { WindowField } from "../src/emissive/WindowField.js";
 import { Animator } from "../src/emissive/animator.js";
+import { RoomLife } from "../src/emissive/roomLife.js";
+import { SecondTick } from "../src/emissive/secondTick.js";
 import { TOWERS, DIGIT_SLOTS } from "../src/world/layout.js";
 import { glyphFor } from "../src/time/clock.js";
 import { GLYPH_W, GLYPH_H, COLON, COLON_W } from "../src/data/font5x7.js";
@@ -82,6 +85,20 @@ DIGIT_SLOTS.forEach((slot, i) => {
     new Uint8Array(GLYPH_W * GLYPH_H), TOWERS[slot].slot,
   );
 });
+// Fast-forward the room toggling, so a still can show the city some way into
+// its own evening rather than only at t=0 where nothing has happened yet.
+const rooms = new RoomLife(field, animator);
+const secondTick = new SecondTick(field, animator);
+const RT = Number(process.env.RT ?? 0);
+if (RT > 0) {
+  for (let t = 0; t <= RT; t += 1) {
+    rooms.step(t);
+    secondTick.step(t);
+    animator.step(1); // a whole second per tick: every fade lands immediately
+  }
+  console.log(`room life advanced to t=${RT}s`);
+}
+
 animator.step(10); // run every fade straight to its endpoint
 field.pulseColon(0);
 field.flush();

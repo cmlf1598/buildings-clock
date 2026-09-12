@@ -67,6 +67,9 @@ export class Animator {
    * actually changed. A normal minute tick flips a handful of windows.
    *
    * `prev` is mutated to hold the new bitmap.
+ *
+ * The fallback for an unlit cell depends on whether the glyph is blank, not on
+ * the cell - see the comment at `want` below.
    *
    * ON is fast and eases out, like a fluorescent tube snapping on, and ripples
    * bottom-up. OFF is slower and eases in, like a filament cooling, and runs
@@ -78,14 +81,32 @@ export class Animator {
     const cells = cols * GLYPH_H;
     const cascade = slot * BUILDING_CASCADE;
 
+    // Is this tower showing anything at all? Only the hours-tens tower is ever
+    // blank, for 1-9 o'clock, and its band cells are the only ones that carry
+    // an ambient level to fall back to.
+    let blank = true;
+    for (let k = 0; k < cells; k++) {
+      if (next[k] === 1) {
+        blank = false;
+        break;
+      }
+    }
+
     for (let k = 0; k < cells; k++) {
       const i = map[k];
       if (i < 0) continue;
 
       const on = next[k] === 1;
-      // Blank glyph falls back to the ambient level, so the hours-tens tower
-      // reads as an ordinary inhabited building rather than a dead one.
-      const want = on ? 1 : f.base[i];
+      // A blank glyph falls back to the ambient level, so the hours-tens tower
+      // reads as an ordinary inhabited building rather than a dead rectangle.
+      //
+      // With a digit ON SCREEN those same cells must go dark instead. They are
+      // the only band cells in the city carrying a level, and leaving them lit
+      // put nine ambient windows INSIDE the numeral, blurring its edges - the
+      // other three towers looked clean only because their band bases are 0.
+      // The switch also earns its keep at the hour: the windows fade out as the
+      // 1 arrives at ten o'clock, and come back when it leaves at one.
+      const want = on ? 1 : blank ? f.base[i] : 0;
       if (next[k] === prev[k] && Math.abs(f.target[i] - want) < 1e-4) continue;
 
       const row = (k / cols) | 0;

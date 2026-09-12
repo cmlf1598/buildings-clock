@@ -7,15 +7,27 @@ const q = new URLSearchParams(
   typeof location === "undefined" ? "" : location.search,
 );
 
+/**
+ * A numeric URL flag. Absent or unparseable falls back instead of poisoning the
+ * scene with NaN - or, worse, with the 0 that Number(null) quietly returns.
+ */
+const num = (key, fallback) => {
+  const v = Number(q.get(key));
+  return q.has(key) && Number.isFinite(v) ? v : fallback;
+};
+
 export const debug = {
   time: q.get("t"), // "10:37" / "23:59" — 24h in, converted to 12h for display
-  rate: Number(q.get("rate") ?? 1), // time multiplier, e.g. ?rate=60
+  rate: num("rate", 1), // time multiplier, e.g. ?rate=60
   cycle: q.has("cycle"), // all four digits count 0..9, one per second
   flat: q.has("flat"), // yaw = pitch = tilt = drift = 0, dead-on elevation
   orbit: q.has("orbit"), // OrbitControls, dynamically imported
   nobloom: q.has("nobloom"),
   bounds: q.has("bounds"),
   bloom: q.get("bloom"), // "0.85,0.55,0.55" live override
+  // Room-toggle rate multiplier: ?rooms=40 watches a night pass in a minute,
+  // ?rooms=0 freezes them.
+  rooms: num("rooms", 1),
 };
 
 export const SEED = 20260911;
@@ -307,6 +319,46 @@ export const STAGGER_OFF_ROW = 0.035; // top-down
 export const STAGGER_JITTER_ON = 0.1;
 export const STAGGER_JITTER_OFF = 0.08;
 export const BUILDING_CASCADE = 0.06; // left-to-right delay per clock tower
+
+// ---------------------------------------------------------------------------
+// Room life
+//
+// Ambient windows switching themselves on and off, so the city is not a still
+// photograph with a clock painted on it.
+//
+// ROOM_TOGGLE_RATE is expressed CITY-WIDE - toggles per second across every
+// room there is - because that is the number you can actually judge by eye.
+// The per-room interval is derived from it and the room count, so adding
+// buildings does not quietly make the city busier.
+//
+// Rooms fade slower than digits (0.28/0.45) on purpose. They are background
+// motion, and anything that snaps at the digits' speed competes with them.
+// ---------------------------------------------------------------------------
+
+export const ROOM_TOGGLE_RATE = 0.6; // toggles per second, whole city
+export const ROOM_ON_DURATION = 0.6;
+export const ROOM_OFF_DURATION = 1.1;
+
+// ---------------------------------------------------------------------------
+// The second hand
+//
+// Once a second, a few windows on the digit towers' front faces swap: the same
+// number on as off, so the lit count on those faces never moves and the tick
+// reads as a CHANGE rather than as a pulse of brightness.
+//
+// These windows belong to the tick alone and are kept out of the slow room
+// toggling - two systems driving one window would disagree about whether it is
+// lit, and the loser would flicker.
+//
+// Fades are quick, near the digits' own speed, because a slow tick is not a
+// tick. They can afford to be: an ambient window peaks at luma 0.4 against a
+// digit's 1.39, so being fast does not make them loud.
+// ---------------------------------------------------------------------------
+
+export const TICK_MIN = 3; // windows swapped per second
+export const TICK_MAX = 4;
+export const TICK_ON_DURATION = 0.22;
+export const TICK_OFF_DURATION = 0.32;
 
 export const COLON_FLOOR = 0.25; // colon never fully dies
 export const BEACON_PERIOD = 2.4; // rooftop antenna blink

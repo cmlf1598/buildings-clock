@@ -68,6 +68,37 @@ export function buildWindowLayout() {
     return items.length - 1;
   };
 
+  /**
+   * An ambient window that is allowed to switch itself on and off later.
+   *
+   * Not every KIND_AMBIENT window qualifies. The separator rows are also
+   * ambient and also dark, but they are dark ON PURPOSE - they letterbox the
+   * digit band away from the ordinary windows - so they go through plain
+   * push() and never end up in here. Light one of those and the glyph loses
+   * the blank gutter that makes it readable.
+   */
+  const rooms = [];
+  const pushRoom = (o) => {
+    const i = push(o);
+    rooms.push(i);
+    return i;
+  };
+
+  /**
+   * An ambient window on a DIGIT tower's front face, driven by the second hand
+   * instead of by the slow room toggling.
+   *
+   * Deliberately disjoint from `rooms`. Two systems driving one window would
+   * disagree about whether it is currently lit, and the one holding the stale
+   * belief would fight the other every time it fired.
+   */
+  const tickRooms = [];
+  const pushTick = (o) => {
+    const i = push(o);
+    tickRooms.push(i);
+    return i;
+  };
+
   /** One ambient draw: returns [level, hue], level 0 when the room is dark. */
   const ambientRoll = () => {
     const on = rng() < AMBIENT_DENSITY;
@@ -111,13 +142,21 @@ export function buildWindowLayout() {
 
       if (inBand) {
         // Tower 0 shows no digit for hours 1-9, so its band cells carry an
-        // ambient level to fall back to. Same density as everywhere else —
-        // special-casing it would read as a suspicious rectangle.
-        const [level, hue] = t.slot === 0 ? ambientRoll() : [0, HUE_COOL];
+        // ambient LEVEL to fall back to. Same density as everywhere else —
+        // special-casing that would read as a suspicious rectangle.
+        //
+        // The hue is NOT taken from the roll, though, and this matters. A band
+        // cell is part of a numeral whenever a digit is up, and a warm one
+        // renders that stroke orange - so the 1 came out in mixed white and
+        // amber while every other tower was clean cool white, which read
+        // exactly like ambient windows sitting inside the digit. The roll is
+        // still consumed, so the density and the rest of the city are
+        // untouched; only the hue is discarded.
+        const [level] = t.slot === 0 ? ambientRoll() : [0];
         const i = push({
           ...p,
           kind: KIND_DIGIT,
-          hue: t.slot === 0 ? hue : HUE_COOL,
+          hue: HUE_COOL,
           base: level,
           start: level,
         });
@@ -131,13 +170,15 @@ export function buildWindowLayout() {
         return;
       }
 
+      // The colon tower has no digit, so its front face keeps the slow life.
       const [level, hue] = ambientRoll();
-      push({ ...p, kind: KIND_AMBIENT, hue, base: level, start: level });
+      const add = isColon ? pushRoom : pushTick;
+      add({ ...p, kind: KIND_AMBIENT, hue, base: level, start: level });
     });
 
     addFace(t, "side", t.sideCols, (r, c, p) => {
       const [level, hue] = ambientRoll();
-      push({ ...p, kind: KIND_AMBIENT, hue, base: level, start: level });
+      pushRoom({ ...p, kind: KIND_AMBIENT, hue, base: level, start: level });
     });
 
     if (isColon) colonMap = map;
@@ -148,11 +189,11 @@ export function buildWindowLayout() {
   for (const f of FILLERS) {
     addFace(f, "front", f.frontCols, (r, c, p) => {
       const [level, hue] = ambientRoll();
-      push({ ...p, kind: KIND_AMBIENT, hue, base: level, start: level });
+      pushRoom({ ...p, kind: KIND_AMBIENT, hue, base: level, start: level });
     });
     addFace(f, "side", f.sideCols, (r, c, p) => {
       const [level, hue] = ambientRoll();
-      push({ ...p, kind: KIND_AMBIENT, hue, base: level, start: level });
+      pushRoom({ ...p, kind: KIND_AMBIENT, hue, base: level, start: level });
     });
     if (f.antenna) {
       beacons.push(
@@ -216,5 +257,12 @@ export function buildWindowLayout() {
     });
   }
 
-  return { items, digitMap, colonMap, beacons };
+  return {
+    items,
+    digitMap,
+    colonMap,
+    beacons,
+    rooms: Int32Array.from(rooms),
+    tickRooms: Int32Array.from(tickRooms),
+  };
 }

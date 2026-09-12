@@ -23,6 +23,8 @@ import { TOWERS, DIGIT_SLOTS } from "./world/layout.js";
 
 import { WindowField } from "./emissive/WindowField.js";
 import { Animator } from "./emissive/animator.js";
+import { RoomLife } from "./emissive/roomLife.js";
+import { SecondTick } from "./emissive/secondTick.js";
 
 import { TimeSource, glyphFor } from "./time/clock.js";
 import { GLYPH_W, GLYPH_H, COLON, COLON_W } from "./data/font5x7.js";
@@ -44,6 +46,8 @@ const field = new WindowField();
 scene.add(field.mesh);
 
 const animator = new Animator(field);
+const rooms = new RoomLife(field, animator);
+const secondTick = new SecondTick(field, animator);
 const timeSource = new TimeSource();
 
 // Previous bitmap per tower, so a minute tick only schedules cells that
@@ -160,6 +164,8 @@ function animate(timestamp) {
 
   field.pulseColon(t);
   field.pulseBeacons(t);
+  rooms.step(t);
+  secondTick.step(t);
   animator.step(dt);
   sign.step(dt);
   citySigns.step(t);

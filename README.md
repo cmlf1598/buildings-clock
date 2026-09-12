@@ -26,10 +26,76 @@ Then open the printed URL. `npm run build` / `npm run preview` for production.
 
 12-hour format. Midnight reads 12:00 AM, noon 12:00 PM.
 
+**The seconds are the city itself.** Once a second, three or four ambient windows on the digit
+towers' front faces come on and the same number go off — see [The second hand](#the-second-hand).
+Together with the colon's pulse, which peaks on the same beat, that is the scene's second hand.
+
+Behind the readout the city keeps its own hours: ordinary windows switch themselves on and off at
+random, about **0.6 changes a second** across the whole block. See [Room life](#room-life).
+
 When the minute rolls over, only the windows that actually changed animate: they fade on fast from
 the bottom up (a fluorescent tube snapping on) and off slower from the top down (a filament
 cooling). On an hour rollover all four digits change at once and the stagger becomes a wave across
 the skyline.
+
+## Room life
+
+Ambient windows turn themselves on and off, so the city is not a still photograph with a clock
+painted on it. Tune it with **`ROOM_TOGGLE_RATE`** in `src/config.js` — expressed city-wide, as
+toggles per second across every room there is, because that is the number you can judge by eye. The
+per-room interval is derived from it and the room count, so adding buildings does not quietly make
+the city busier. `?rooms=40` in the URL speeds it up 40x for checking; `?rooms=0` freezes it.
+
+Each room is a two-state Markov chain with exponentially distributed waits, so the gaps are
+genuinely irregular rather than a jittered metronome. **The two waits are deliberately unequal, and
+that is the part not to "simplify".** Draw both from the same distribution and every room ends up
+lit half the time — the city drifts from its designed 18% occupancy (`AMBIENT_DENSITY`) to 50% and
+quietly gets twice as bright as it was built to be. Splitting the cycle by that density makes it the
+chain's stationary distribution instead: rooms come and go forever and the lit fraction stays put.
+Simulated over an hour it holds at 18–19%.
+
+Two things it must not touch, both of which would take a while to debug if it did:
+
+- **Digit cells** belong to the glyph animator, and the colon and beacons are written directly every
+  frame. Only `field.rooms` is eligible.
+- **The separator rows** are ambient windows and dark, but dark *on purpose* — they letterbox the
+  digit band away from the ordinary windows. `windowLayout` builds them through plain `push()` so
+  they never enter the room list at all. There are exactly 44 of them.
+
+It owns no drawing and no tweening: when a room's turn comes it hands the change to the same
+`Animator` the digits use, which already knows how to fade one instance from wherever it happens to
+be. Randomness comes from the **stateless** hash, never the seeded generator — including a
+dark room's lit level, which is derived from its instance index rather than rolled. That is what
+keeps the city byte-for-byte identical to before this existed, which is checked rather than assumed.
+
+## The second hand
+
+Once a second, a few ambient windows on the digit towers' front faces swap: **the same number come
+on as go off.** The equal count is the whole trick. A burst that only lit windows would read as the
+building brightening, and the eye tires of that in a minute; swapping keeps the lit total on those
+faces exactly constant, so what registers is *change* — which is what a tick is. Simulated over a
+minute the total never moves off 27.
+
+Size is `TICK_MIN`/`TICK_MAX` in `src/config.js`, currently 3–4, out of a pool of 125 windows. That
+recycles the lit set roughly every eight seconds.
+
+**Where.** Only ambient windows on the front faces of the four towers that carry digits. The digit
+band sits between them with a dark separator row above and below, so the movement frames the
+numerals and never touches them. The colon tower is excluded and keeps the slow room life — it
+already ticks in its own right.
+
+**When.** On each whole second of *elapsed* time, which is also where the colon's pulse peaks, so
+the two land on the same beat. Elapsed time freezes with a backgrounded tab, so coming back to one
+does not fire every missed second at once.
+
+Those 125 windows are deliberately kept **out** of `RoomLife`. Two systems driving one window would
+disagree about whether it is lit, and whichever held the stale belief would fight the other every
+time it fired — a flicker that would take a long evening to track down. `windowLayout` splits them
+at build time into `rooms` and `tickRooms`, and the two lists are disjoint by construction.
+
+Fades are quick, near the digits' own speed, because a slow tick is not a tick. They can afford to
+be: an ambient window peaks at luma 0.4 against a digit's 1.39, so being fast does not make them
+loud.
 
 ## The signs
 
@@ -150,6 +216,7 @@ Append to the URL. No rebuild needed.
 | `?orbit` | OrbitControls, dynamically imported so it stays out of the production bundle |
 | `?nobloom` | turn the bloom pass off, to see the raw scene |
 | `?bloom=0.42,0.35,0.58` | live strength,radius,threshold override |
+| `?rooms=40` | speed the window toggling up 40x, so a night's worth passes in a minute. `?rooms=0` freezes it |
 | `?bounds` | log the scene's NDC bounds — use this to re-derive the framing |
 
 Worth trying: `?t=11:59&rate=120` exercises the AM→PM switch, the 12-hour conversion and a
@@ -168,6 +235,8 @@ src/
   world/neonBezel.js buildings outlined in tube
   world/castleRoof.js  the generated tenshu roof
   emissive/neonLife.js breathing and the one failing tube
+  emissive/roomLife.js rooms switching themselves on and off
+  emissive/secondTick.js the once-a-second window swap
   emissive/          the instanced light field, palette, animator
   data/font5x7.js    digit bitmaps, validated at import time
   data/scriptGlyphs.js  neon tube centrelines for the script "am" / "pm"
@@ -208,7 +277,7 @@ group.) The two bezels are one mesh each and 960 triangles between them.
 Everything random is seeded (`mulberry32`, consumed once at build time in a fixed traversal order),
 so the city is identical on every reload. `Math.random()` is never called.
 
-## Twelve things that look wrong but are deliberate
+## Thirteen things that look wrong but are deliberate
 
 These each cost real debugging time. Please don't "fix" them back.
 
@@ -289,6 +358,24 @@ scene's bounding box (tower 4's rooftop plant), and `DESIGN_W`/`DESIGN_H` are so
 box. Keeping the signs under the existing ceiling meant seven new objects changed the framing by
 exactly nothing. Break it and the contain-fit re-crops the whole diorama — `npm run measure` will
 tell you, and it exits non-zero when it happens.
+
+**13. The hours-tens tower's band cells are the only digit cells in the city carrying an ambient
+level, and they are read two different ways.** That tower shows nothing at all for 1–9 o'clock, so
+its 35 band cells hold an ambient level to fall back to — otherwise it would be a dead rectangle
+while every other tower is inhabited. But the fallback applies **only when the glyph is blank**. With
+a digit on screen those cells go dark like everywhere else, because leaving them lit put nine
+ambient windows *inside* the numeral and blurred its edges. `applyGlyph` therefore decides the
+fallback per GLYPH, not per cell — do not simplify `on ? 1 : blank ? base : 0` back to
+`on ? 1 : base`.
+
+Their **hue** is forced cool for the same reason, and the ambient roll's hue is deliberately
+discarded. A band cell becomes part of a numeral whenever a digit is up, and a warm one renders that
+stroke orange — the 1 came out in mixed white and amber while the other three towers were clean cool
+white, which read exactly like ambient windows sitting in the digit. The roll is still *consumed* so
+the density and the rest of the city are untouched; only the hue is dropped.
+
+The payoff is the hour rollover: the windows fade out as the 1 arrives at ten o'clock, and come
+back when it leaves at one.
 
 ## Tolerances
 
