@@ -22,15 +22,28 @@ const luma709 = (c) => 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
  * slightly desaturated highlight — which is exactly what makes the bloom
  * threshold a meaningful separator instead of a hard cutoff.
  *
- * The multipliers are SOLVED, not guessed: each is chosen so the resulting
- * Rec.709 luma lands on a target, which is what makes one bloom threshold
- * separate the layers cleanly.
+ * The multipliers are solved against Rec.709 luma, not guessed, which is what
+ * lets one bloom threshold separate the layers cleanly. Measured today, with
+ * the bloom threshold at 0.58:
  *
- *     lit digit window      1.39   hero light, blooms strongly
- *     brightest ambient     0.56   grazes the threshold, soft halo only
- *     dimmest ambient       0.28   glows, never bleeds
- *     brightest roof face   0.04   nowhere near it, and scales with
- *                                   AMBIENT_INTENSITY in config.js
+ *                          cool    warm
+ *     lit digit window     0.899   1.385   hero light
+ *     brightest ambient    0.270   0.416   glows, never bleeds
+ *     dimmest ambient      0.180   0.277
+ *     brightest roof face  0.043           nowhere near it, and scales with
+ *                                          AMBIENT_INTENSITY in config.js
+ *
+ * COOL AND WARM ARE NOT MATCHED, and that is the thing to know before touching
+ * either. They were - both landed on 1.39 - until LIT_COOL was dimmed from 1.7
+ * to 1.1 to take the digits down, and LIT_WARM was left where it was. So a warm
+ * window is 1.54x a cool one at the same level, and the handful of warm ambient
+ * windows are the brightest ordinary windows in the city by some margin. That
+ * is the current intent, not an oversight; LIT_WARM = 1.59 would restore parity
+ * if it ever stops being.
+ *
+ * The digits are no longer the brightest thing in the scene either - the AM/PM
+ * sign's frame sits at 1.00 against their 0.899. README note 5 carries the full
+ * ladder; re-measure it after changing anything here.
  *
  * Getting this wrong is the single most likely way to wreck the look: with
  * the first pass every lit window sat at luma 2.13 — ambient windows exactly
